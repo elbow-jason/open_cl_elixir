@@ -1,0 +1,22 @@
+[package]
+name = "open_cl_native"
+version = "0.1.0"
+authors = []
+edition = "2018"
+
+[lib]
+name = "open_cl_native"
+path = "src/lib.rs"
+crate-type = ["dylib"]
+
+[dependencies]
+rustler = { git = "https://github.com/elbow-jason/rustler", branch = "add-return-term-to-error" }
+opencl-core = {git = "https://github.com/elbow-jason/open_cl_rust", rev = "90cf50b"}
+serde_rustler = "0.0.3"
+failure = "0.1.6"
+paste = "0.1.6"
+ndarray = "0.13.0"
+
+num = "0.2.0"
+num-complex = "0.2.3"
+num-traits = "0.2.10"
