@@ -71,7 +71,7 @@ defmodule OpenCL.Device do
   # # others
   # def platform(device), do: Native.device_self_platform(device)
 
-    defimpl Inspect do
+  defimpl Inspect do
     @spec inspect(Device.t(), any) :: String.t()
     def inspect(device, _) do
       if Device.usable?(device) do

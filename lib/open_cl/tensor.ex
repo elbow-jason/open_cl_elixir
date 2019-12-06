@@ -28,5 +28,3 @@ defmodule OpenCL.Tensor do
 end
 
 # alias OpenCL.Platform
-
-

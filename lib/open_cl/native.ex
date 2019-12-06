@@ -1,5 +1,3 @@
-
-
 defmodule OpenCL.Native do
   use Rustler, otp_app: :open_cl, crate: :open_cl_native
 
@@ -54,7 +52,7 @@ defmodule OpenCL.Native do
   @spec platform_self_extensions(Platform.t()) :: output(String.t())
   def platform_self_extensions(_platform), do: err()
 
-  #DEVICE
+  # DEVICE
   @spec device_default :: Device.t()
   def device_default, do: err()
 
@@ -224,17 +222,16 @@ defmodule OpenCL.Native do
   @spec device_self_max_work_item_sizes(Device.t()) :: [non_neg_integer()]
   def device_self_max_work_item_sizes(_device), do: err()
 
-
-  @type partition_affinity_domain :: :numa
-    | :l4_cache
-    | :l3_cache
-    | :l2_cache
-    | :l1_cache
-    | :next_partitionable
+  @type partition_affinity_domain ::
+          :numa
+          | :l4_cache
+          | :l3_cache
+          | :l2_cache
+          | :l1_cache
+          | :next_partitionable
 
   @spec device_self_partition_affinity_domain(Device.t()) :: [partition_affinity_domain()]
   def device_self_partition_affinity_domain(_device), do: err()
-
 
   # # device flags
   # @spec device_self_max_work_item_sizes(Device.t()) :: integer()
@@ -256,7 +253,6 @@ defmodule OpenCL.Native do
   # @spec device_self_platform(Device.t()) :: Platform.t()
   # def device_self_platform(_device), do: err()
 
-
   # # CONTEXT
   # @spec context_create(Device.t()) :: Native.output(Context.t())
   # def context_create(_device), do: err()
@@ -274,10 +270,8 @@ defmodule OpenCL.Native do
   # @spec command_queue_self_reference_count(CommandQueue.t()) :: output(non_neg_integer())
   # def command_queue_self_reference_count(_command_queue), do: err()
 
-
   @spec session_create_with_src(Device.t(), String.t()) :: output(Session.t())
   def session_create_with_src(_device, _src), do: err()
-
 
   @spec session_self_device(Session.t()) :: Device.t()
   def session_self_device(_session), do: err()
@@ -372,7 +366,8 @@ defmodule OpenCL.Native do
   @spec session_self_device_preferred_vector_width_float(Session.t()) :: output(non_neg_integer())
   def session_self_device_preferred_vector_width_float(_session), do: err()
 
-  @spec session_self_device_preferred_vector_width_double(Session.t()) :: output(non_neg_integer())
+  @spec session_self_device_preferred_vector_width_double(Session.t()) ::
+          output(non_neg_integer())
   def session_self_device_preferred_vector_width_double(_session), do: err()
 
   @spec session_self_device_preferred_vector_width_half(Session.t()) :: output(non_neg_integer())
@@ -442,7 +437,7 @@ defmodule OpenCL.Native do
   def session_self_device_max_work_item_sizes(_session), do: err()
 
   @type dim :: non_neg_integer()
-  @type dims :: dim() | {dim()} | {dim(), dim()}, {dim(), dim(), dim()}
+  @type(dims :: dim() | {dim()} | {dim(), dim()}, {dim(), dim(), dim()})
 
   @type number_type :: :u8 | :i8 | :u16 | :i16 | :u32 | :i32 | :f32 | :u64 | :i64 | :f64
 
@@ -480,4 +475,3 @@ defmodule OpenCL.Native do
   @spec tensor_self_extend_vec(Tensor.t(), [float]) :: Tensor.t()
   def tensor_self_extend_vec(_tensor, _list_of_f32), do: err()
 end
-

@@ -32,6 +32,7 @@ impl_number_typed_t!(u16, U16);
 impl_number_typed_t!(i16, I16);
 impl_number_typed_t!(u32, U32);
 impl_number_typed_t!(i32, I32);
+impl_number_typed_t!(f32, F32);
 impl_number_typed_t!(u64, U64);
 impl_number_typed_t!(i64, I64);
 impl_number_typed_t!(f64, F64);

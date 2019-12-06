@@ -185,6 +185,16 @@ fn array_new_filled_with(number_type: NumberType, filler: NumEx, count: usize) -
     match casted {
         NumEx::U8(number) => ArrayEx::filled_with::<u8>(number, count),
         NumEx::I8(number) => ArrayEx::filled_with::<i8>(number, count),
+        NumEx::U16(number) => ArrayEx::filled_with::<u16>(number, count),
+        NumEx::I16(number) => ArrayEx::filled_with::<i16>(number, count),
+        NumEx::U32(number) => ArrayEx::filled_with::<u32>(number, count),
+        NumEx::I32(number) => ArrayEx::filled_with::<i32>(number, count),
+        NumEx::F32(number) => ArrayEx::filled_with::<f32>(number, count),
+        NumEx::U64(number) => ArrayEx::filled_with::<u64>(number, count),
+        NumEx::I64(number) => ArrayEx::filled_with::<i64>(number, count),
+        NumEx::F64(number) => ArrayEx::filled_with::<f64>(number, count),
+        NumEx::Usize(number) => ArrayEx::filled_with::<usize>(number, count),
+        NumEx::Isize(number) => ArrayEx::filled_with::<isize>(number, count),
         got => panic!("ArrayEx::filled_with called with an invalid filler {:?}", got),
     }   
 }

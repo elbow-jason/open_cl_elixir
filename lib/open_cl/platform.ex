@@ -28,5 +28,3 @@ defmodule OpenCL.Platform do
 end
 
 # alias OpenCL.Platform
-
-

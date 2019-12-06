@@ -4,14 +4,14 @@ defmodule OpenCL.NativeStruct do
       alias OpenCL.Native
 
       @namespace __MODULE__
-        |> Module.split()
-        |> List.last
-        |> Macro.underscore()
-        |> String.to_atom()
+                 |> Module.split()
+                 |> List.last()
+                 |> Macro.underscore()
+                 |> String.to_atom()
 
       @type t :: %__MODULE__{
-        __native__: Native.resource_ref()
-      }
+              __native__: Native.resource_ref()
+            }
 
       defstruct [:__native__]
 
@@ -27,8 +27,9 @@ defmodule OpenCL.NativeStruct do
 
   defmacro method(name) do
     quote do
-      defdelegate unquote(name)(ex_struct), to: OpenCL.Native, as: :"#{@namespace}_self_#{unquote(name)}"
+      defdelegate unquote(name)(ex_struct),
+        to: OpenCL.Native,
+        as: :"#{@namespace}_self_#{unquote(name)}"
     end
   end
 end
-

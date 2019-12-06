@@ -61,7 +61,6 @@ defmodule OpenCL.Session do
   method(:device_profiling_timer_resolution)
   method(:device_max_work_item_sizes)
 
-
   defimpl Inspect do
     @spec inspect(Session.t(), any) :: String.t()
     def inspect(session, _) do

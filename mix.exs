@@ -22,9 +22,6 @@ defmodule OpenCL.MixProject do
   def rustc_mode(:dev), do: :debug
   def rustc_mode(_), do: :release
 
-
-
-
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
@@ -36,7 +33,7 @@ defmodule OpenCL.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:rustler, "~> 0.21.0"},
+      {:rustler, "~> 0.21.0"}
       # {:dep_from_hexpm, "~> 0.3.0"},
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
     ]
