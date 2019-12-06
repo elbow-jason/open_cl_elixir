@@ -1,17 +1,13 @@
+use opencl_core::Device;
 use std::default::Default;
 use std::fmt;
-use opencl_core::Device;
 
 use rustler::resource::ResourceArc;
 use rustler::{Encoder, NifStruct, NifUnitEnum};
 
-use super::{
-    WrapperEx,
-    WrapperExResource,
-    OutputEx,
-};
+use super::{OutputEx, WrapperEx, WrapperExResource};
 
-use crate::traits::{NativeWrapper, BitflagEx};
+use crate::traits::{BitflagEx, NativeWrapper};
 
 impl WrapperExResource for Device {}
 
@@ -51,7 +47,6 @@ impl DeviceEx {
         self.native().is_usable()
     }
 }
-
 
 // device
 #[rustler::nif]
@@ -122,12 +117,7 @@ impl_native_method_and_nif!(DeviceEx, device, profiling_timer_resolution, usize)
 
 impl_native_method_and_nif!(DeviceEx, device, max_work_item_sizes, Vec<usize>);
 
-use opencl_core::device::flags::{
-    DeviceAffinityDomain,
-    // DeviceType,
-    // DeviceMemCacheType,
-    // DeviceLocalMemType,
-};
+use opencl_core::device::flags::DeviceAffinityDomain;
 
 #[derive(NifUnitEnum, Clone)]
 pub enum DeviceAffinityDomainEx {
@@ -141,24 +131,47 @@ pub enum DeviceAffinityDomainEx {
 
 const DEVICE_AFFINITY_DOMAIN_EX_MAPPING: [(DeviceAffinityDomain, DeviceAffinityDomainEx); 6] = [
     (DeviceAffinityDomain::NUMA, DeviceAffinityDomainEx::Numa),
-    (DeviceAffinityDomain::L4_CACHE, DeviceAffinityDomainEx::L4Cache),
-    (DeviceAffinityDomain::L3_CACHE, DeviceAffinityDomainEx::L3Cache),
-    (DeviceAffinityDomain::L2_CACHE, DeviceAffinityDomainEx::L2Cache),
-    (DeviceAffinityDomain::L1_CACHE, DeviceAffinityDomainEx::L1Cache),
-    (DeviceAffinityDomain::NEXT_PARTITIONABLE, DeviceAffinityDomainEx::NextPartitionable),
+    (
+        DeviceAffinityDomain::L4_CACHE,
+        DeviceAffinityDomainEx::L4Cache,
+    ),
+    (
+        DeviceAffinityDomain::L3_CACHE,
+        DeviceAffinityDomainEx::L3Cache,
+    ),
+    (
+        DeviceAffinityDomain::L2_CACHE,
+        DeviceAffinityDomainEx::L2Cache,
+    ),
+    (
+        DeviceAffinityDomain::L1_CACHE,
+        DeviceAffinityDomainEx::L1Cache,
+    ),
+    (
+        DeviceAffinityDomain::NEXT_PARTITIONABLE,
+        DeviceAffinityDomainEx::NextPartitionable,
+    ),
 ];
 
-impl_bitflag_ex_for!(DeviceAffinityDomainEx, DeviceAffinityDomain, DEVICE_AFFINITY_DOMAIN_EX_MAPPING);
+impl_bitflag_ex_for!(
+    DeviceAffinityDomainEx,
+    DeviceAffinityDomain,
+    DEVICE_AFFINITY_DOMAIN_EX_MAPPING
+);
 
-
-impl_native_method_into_bitflag_and_nif!(DeviceEx, device, partition_affinity_domain, DeviceAffinityDomainEx);
+impl_native_method_into_bitflag_and_nif!(
+    DeviceEx,
+    device,
+    partition_affinity_domain,
+    DeviceAffinityDomainEx
+);
 
 // impl DeviceAffinityDomainEx {
 //     fn list(flag: DeviceAffinityDomain) -> Vec<DeviceAffinityDomainEx> {
 //         bit_flag_to_ex(flag, DEVICE_AFFINITY_DOMAIN_EX_MAPPING)
 //         // use DeviceAffinityDomainEx as Ex;
 //         // use DeviceAffinityDomain as Cl;
-        
+
 //         // let mut output: Vec<Ex> = Vec::new();
 //         // if aff.contains(Cl::NUMA) {
 //         //     output.push(Ex::Numa)
@@ -178,10 +191,9 @@ impl_native_method_into_bitflag_and_nif!(DeviceEx, device, partition_affinity_do
 //         // if aff.contains(Cl::NEXT_PARTITIONABLE) {
 //         //     output.push(Ex::NextPartitionable)
 //         // }
-     
+
 //     }
 // }
-
 
 // impl DeviceEx {
 //     pub fn partition_affinity_domain(&self) -> OutputEx<Vec<DeviceAffinityDomainEx>> {
@@ -221,14 +233,9 @@ impl_native_method_into_bitflag_and_nif!(DeviceEx, device, partition_affinity_do
 //         // const L1_CACHE = 16;
 //         // const NEXT_PARTITIONABLE = 32;
 
-
-
-
-
 // impl_native_method!(DeviceEx, device_type, DeviceType);
 // impl_native_method!(DeviceEx, global_mem_cache_type, DeviceMemCacheType);
 // impl_native_method!(DeviceEx, local_mem_type, DeviceLocalMemType);
 
 // // device Platform
 // impl_native_method_into_other!(DeviceEx, platform, PlatformEx);
-

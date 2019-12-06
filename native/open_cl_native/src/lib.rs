@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate failure;
-extern crate num;
 extern crate ndarray;
+extern crate num;
 extern crate num_complex;
 
 // use ndarray::prelude::*;
@@ -13,23 +13,22 @@ mod atoms;
 #[macro_use]
 mod macros;
 
-mod traits;
 mod number;
+mod traits;
 
 mod ex;
 
-use ex::platform_ex;
-use ex::device_ex;
-use ex::session_ex;
 use ex::array_ex;
+use ex::device_ex;
+use ex::platform_ex;
+use ex::session_ex;
 // use ex::tensor_ex;
 
 // use ex::command_queue_ex;
 
-
 rustler::init! {
     "Elixir.OpenCL.Native",
-    [   
+    [
         // platform
         platform_ex::platform_default,
         platform_ex::platform_list_all,
@@ -47,14 +46,14 @@ rustler::init! {
 
         device_ex::device_default,
         device_ex::device_self_is_usable,
-        
+
         device_ex::device_self_name,
         device_ex::device_self_opencl_c_version,
         device_ex::device_self_profile,
         device_ex::device_self_vendor,
         device_ex::device_self_version,
         device_ex::device_self_driver_version,
-        
+
         // device u32
         device_ex::device_self_address_bits,
         device_ex::device_self_global_mem_cacheline_size,
@@ -109,7 +108,7 @@ rustler::init! {
 
         // Vec<usize>
         device_ex::device_self_max_work_item_sizes,
-        
+
         // device flags
         device_ex::device_self_partition_affinity_domain,
 
@@ -180,12 +179,19 @@ rustler::init! {
         array_ex::array_number_type,
         array_ex::array_cast,
 
-        
+
         // TENSOR
         // tensor_ex::tensor_new,
         // tensor_ex::tensor_self_dims,
         // tensor_ex::tensor_self_extend_tensor,
         // tensor_ex::tensor_self_extend_vec,
+        // tensor_ex::tensor_from_array,
+        // tensor_ex::tensor_from_number_vector,
+        // tensor_ex::tensor_self_dims,
+        // tensor_ex::tensor_self_number_vector,
+        // tensor_ex::tensor_self_number_type,
+        // tensor_ex::tensor_self_cast_to_number_type,
+
     ],
     load = load
 }

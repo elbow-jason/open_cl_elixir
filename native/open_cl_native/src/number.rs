@@ -1,4 +1,3 @@
-
 // use std::fmt::{Display, Debug};
 // use std::ops::*;
 // use std::iter::{Sum, Product};
@@ -8,7 +7,7 @@
 // // Implements an unsafe trait for a list of types.
 // // macro_rules! impl_unsafe {
 // //     ($trait_name:ident: $( $t:ident ),+) => {
-        
+
 // //     }
 // // }
 
@@ -20,7 +19,6 @@
 // ///
 // /// Can also be implemented for custom types as long as layout and
 // /// alignment are conserved between Rust and OpenCL (repr "C").
-
 
 // // impl_unsafe!(PrimitiveNum:
 // //     u8, i8,
@@ -47,4 +45,4 @@
 // ///
 // /// To describe the contents of buffers, etc., prefer using the more general
 // /// `OclPrm` trait unless numeric operations are required.
-// /// 
+// ///

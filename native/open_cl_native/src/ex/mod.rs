@@ -1,24 +1,20 @@
-use opencl_core::{
-    Platform,
-    Device,
-    Session,
-};
+use opencl_core::{Device, Platform, Session};
 
-pub mod error_ex;
-pub mod platform_ex;
+pub mod array_ex;
 pub mod device_ex;
+pub mod error_ex;
+pub mod number_ex;
+pub mod platform_ex;
 pub mod session_ex;
 pub mod tensor_ex;
-pub mod array_ex;
-pub mod number_ex;
 pub mod wrapper_ex;
 
+pub use array_ex::{Array, ArrayEx};
+pub use device_ex::DeviceEx;
 pub use error_ex::{ErrorEx, OutputEx};
 pub use platform_ex::PlatformEx;
-pub use device_ex::DeviceEx;
-pub use tensor_ex::{Tensor};
-pub use array_ex::{ArrayEx, Array};
 pub use session_ex::SessionEx;
+pub use tensor_ex::Tensor;
 
 pub use wrapper_ex::{WrapperEx, WrapperExResource};
 

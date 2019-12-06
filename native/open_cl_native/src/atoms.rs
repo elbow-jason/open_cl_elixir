@@ -5,4 +5,3 @@ rustler::atoms! {
     error,
     status_code_error,
 }
-

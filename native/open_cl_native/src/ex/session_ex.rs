@@ -1,14 +1,11 @@
 use std::fmt;
-use opencl_core::Session;
+use std::ops::Deref;
 
+use opencl_core::Session;
 use rustler::resource::ResourceArc;
 use rustler::{Encoder, NifStruct};
 
-use super::{
-    WrapperEx,
-    WrapperExResource,
-    OutputEx,
-};
+use super::{OutputEx, WrapperEx, WrapperExResource};
 
 use crate::traits::NativeWrapper;
 
@@ -22,7 +19,7 @@ impl WrapperExResource for Session {}
 pub struct SessionEx {
     __native__: ResourceArc<WrapperEx<Session>>,
     src: String,
-    _unconstructable: ()
+    _unconstructable: (),
 }
 
 impl fmt::Debug for SessionEx {
@@ -42,7 +39,7 @@ impl SessionEx {
         SessionEx {
             __native__: session.into_resource_arc(),
             src,
-            _unconstructable: ()
+            _unconstructable: (),
         }
     }
 
@@ -54,8 +51,11 @@ impl SessionEx {
     pub fn clone_device_ex(&self) -> DeviceEx {
         DeviceEx::new(self.native().device().clone())
     }
-}
 
+    pub fn clone_native(&self) -> Session {
+        self.native().clone()
+    }
+}
 
 #[rustler::nif]
 fn session_create_with_src(device: DeviceEx, src: String) -> OutputEx<SessionEx> {
@@ -82,14 +82,13 @@ macro_rules! impl_session_method_and_nif {
                     .map_err(|e| e.into())
                 }
             }
-        
+
             #[rustler::nif]
             pub fn [<session_self_ $field _ $func_name>](item: SessionEx) -> OutputEx<$ret> {
                 item.[<$field _ $func_name>]()
             }
         }
-        
-    }
+    };
 }
 
 impl_session_method_and_nif!(device, name, String);

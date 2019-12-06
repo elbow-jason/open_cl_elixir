@@ -1,7 +1,6 @@
 use rustler::resource::{ResourceArc, ResourceTypeProvider};
 // use rustler::{Decoder, Encoder, Env, Error, Term};
 
-
 pub struct WrapperEx<T> {
     pub item: T,
 }
@@ -12,7 +11,11 @@ impl<T> WrapperEx<T> {
     }
 }
 
-pub trait WrapperExResource where WrapperEx<Self>: ResourceTypeProvider, Self: Sized {
+pub trait WrapperExResource
+where
+    WrapperEx<Self>: ResourceTypeProvider,
+    Self: Sized,
+{
     fn into_resource_arc(self) -> ResourceArc<WrapperEx<Self>> {
         ResourceArc::new(WrapperEx::new(self))
     }
@@ -22,7 +25,6 @@ pub trait WrapperExResource where WrapperEx<Self>: ResourceTypeProvider, Self: S
 // macro_rules! impl_resource_wrapper {
 //     ($t:ty, $env:expr) => {
 //         #[derive(Clone, Debug)]
-  
 
 //         unsafe impl<T> Send for Wrapper<T> where T: Send {}
 //         unsafe impl<T> Sync for Wrapper<T> where T: Sync {}
@@ -43,7 +45,6 @@ pub trait WrapperExResource where WrapperEx<Self>: ResourceTypeProvider, Self: S
 //         //         Ok(wrapper)
 //         //     }
 //         // }
-
 
 //         impl<T> Encoder for Wrapper<T> where Wrapper<T>: ResourceTypeProvider{
 //             fn encode<'a>(&self, env: Env<'a>) -> Term<'a> {

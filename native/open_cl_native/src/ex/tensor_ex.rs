@@ -1,19 +1,14 @@
-use std::sync::RwLock;
 use std::fmt;
+use std::sync::RwLock;
 
 // use ndarray as nd;
+use opencl_core::Dims;
 use rustler::resource::ResourceArc;
 use rustler::{Encoder, NifStruct, NifTuple, NifUntaggedEnum};
-use opencl_core::Dims;
 
-use crate::traits::NativeWrapper;
-use crate::ex::number_ex::{
-    NumberType,
-    NumberTyped,
-    NumberVector,
-    CastNumber,
-};
 use crate::ex::array_ex::ArrayEx;
+use crate::ex::number_ex::{CastNumber, NumberType, NumberTyped, NumberVector};
+use crate::traits::NativeWrapper;
 
 pub trait Dimension {
     fn product(&self) -> usize;
@@ -69,7 +64,6 @@ impl Dimension for DimsEx {
     }
 }
 
-
 impl From<DimsEx> for Dims {
     fn from(dims: DimsEx) -> Dims {
         match dims {
@@ -91,7 +85,6 @@ impl From<Dims> for DimsEx {
     }
 }
 
-
 #[derive(Debug)]
 pub struct Tensor {
     dims: Dims,
@@ -99,13 +92,20 @@ pub struct Tensor {
 }
 
 impl Tensor {
-    pub fn new<D>(dims: D, number_vector: NumberVector) -> Tensor where D: Into<Dims> + Dimension + fmt::Debug {
+    pub fn new<D>(dims: D, number_vector: NumberVector) -> Tensor
+    where
+        D: Into<Dims> + Dimension + fmt::Debug,
+    {
         if !dims.matches_length(number_vector.length()) {
-            panic!("Dimension mismatch error the dimensions {:?} do not match length {:?}", dims, number_vector.length());
+            panic!(
+                "Dimension mismatch error the dimensions {:?} do not match length {:?}",
+                dims,
+                number_vector.length()
+            );
         }
         Tensor {
             dims: dims.into(),
-            data: RwLock::new(number_vector)
+            data: RwLock::new(number_vector),
         }
     }
 
@@ -128,8 +128,6 @@ impl NumberTyped for Tensor {
     }
 }
 
-
-
 #[derive(NifStruct)]
 #[must_use]
 #[module = "OpenCL.Tensor"]
@@ -143,7 +141,6 @@ impl fmt::Debug for TensorEx {
     }
 }
 
-
 impl NativeWrapper<Tensor> for TensorEx {
     fn native(&self) -> &Tensor {
         &self.__native__
@@ -151,7 +148,6 @@ impl NativeWrapper<Tensor> for TensorEx {
 }
 
 impl TensorEx {
-
     pub fn new(tensor: Tensor) -> TensorEx {
         TensorEx {
             __native__: tensor.into_resource_arc(),
@@ -175,7 +171,7 @@ impl TensorEx {
     // }
 
     // pub fn extend(&self, other: Vec<f32>) {
-        
+
     //     let mut data = self.native().data.lock().unwrap();
     //     data.extend(other);
     // }
@@ -192,7 +188,6 @@ impl CastNumber for TensorEx {
         TensorEx::new(tensor)
     }
 }
-
 
 #[rustler::nif]
 fn tensor_from_array(dims: DimsEx, array: ArrayEx) -> TensorEx {
@@ -225,7 +220,3 @@ fn tensor_self_number_type(tensor: TensorEx) -> NumberType {
 fn tensor_self_cast_to_number_type(tensor: TensorEx, number_type: NumberType) -> TensorEx {
     tensor.cast_number(number_type)
 }
-
-
-
-

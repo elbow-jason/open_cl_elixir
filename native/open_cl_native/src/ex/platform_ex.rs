@@ -8,8 +8,7 @@ use rustler::{Encoder, NifStruct};
 
 use crate::traits::NativeWrapper;
 
-use super::{WrapperEx, OutputEx, WrapperExResource, DeviceEx};
-
+use super::{DeviceEx, OutputEx, WrapperEx, WrapperExResource};
 
 impl WrapperExResource for Platform {}
 
@@ -39,17 +38,10 @@ impl NativeWrapper<Platform> for PlatformEx {
 }
 
 impl PlatformEx {
-
     pub fn all() -> OutputEx<Vec<PlatformEx>> {
         Platform::all()
             .map_err(|e| e.into())
-            .map(|platforms| {
-                platforms
-                    .into_iter()
-                    .map(|p| PlatformEx::new(p))
-                    .collect()
-                
-            })
+            .map(|platforms| platforms.into_iter().map(|p| PlatformEx::new(p)).collect())
     }
 
     pub fn new(platform: Platform) -> PlatformEx {

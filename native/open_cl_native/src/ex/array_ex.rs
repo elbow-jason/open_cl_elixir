@@ -1,26 +1,20 @@
-use std::sync::RwLock;
 use std::fmt;
 use std::ops::Deref;
+use std::sync::RwLock;
 
-use rustler::types::atom::Atom;
 use rustler::resource::ResourceArc;
+use rustler::types::atom::Atom;
 use rustler::{Encoder, NifStruct};
 
-use crate::traits::NativeWrapper;
 use crate::atoms;
 use crate::ex::number_ex::{
-    NumEx,
-    NumberVector,
-    NumberTyped,
-    NumberTypedT,
-    NumberType,
-    Number,
-    CastNumber
+    CastNumber, NumEx, Number, NumberType, NumberTyped, NumberTypedT, NumberVector,
 };
+use crate::traits::NativeWrapper;
 
 #[derive(Debug)]
 pub struct Array {
-    data: RwLock<NumberVector>
+    data: RwLock<NumberVector>,
 }
 
 impl NumberTyped for Array {
@@ -39,7 +33,7 @@ impl CastNumber for Array {
 impl Array {
     pub fn new(data: NumberVector) -> Array {
         Array {
-            data: RwLock::new(data)
+            data: RwLock::new(data),
         }
     }
 
@@ -81,7 +75,11 @@ impl NativeWrapper<Array> for ArrayEx {
 }
 
 impl ArrayEx {
-    pub fn filled_with<T>(number: T, count: usize) -> ArrayEx where T: NumberTypedT + Number, NumberVector: From<Vec<T>> {
+    pub fn filled_with<T>(number: T, count: usize) -> ArrayEx
+    where
+        T: NumberTypedT + Number,
+        NumberVector: From<Vec<T>>,
+    {
         let numbers: Vec<T> = std::iter::repeat(number).take(count).collect();
         let number_vector = NumberVector::from(numbers);
         ArrayEx::from_number_vector(number_vector)
@@ -120,7 +118,7 @@ impl ArrayEx {
             data.extend(&other_data);
         }
     }
-    
+
     pub fn push(&self, item: NumEx) {
         let mut data = self.native().data.write().unwrap();
         data.push(item);
@@ -134,7 +132,7 @@ impl ArrayEx {
 impl NumberTyped for ArrayEx {
     fn number_type(&self) -> NumberType {
         self.native().number_type()
-    }   
+    }
 }
 
 impl CastNumber for ArrayEx {
@@ -195,7 +193,7 @@ fn array_new_filled_with(number_type: NumberType, filler: NumEx, count: usize) -
         NumEx::F64(number) => ArrayEx::filled_with::<f64>(number, count),
         NumEx::Usize(number) => ArrayEx::filled_with::<usize>(number, count),
         NumEx::Isize(number) => ArrayEx::filled_with::<isize>(number, count),
-    }   
+    }
 }
 
 #[rustler::nif]
@@ -207,4 +205,3 @@ fn array_number_type(array: ArrayEx) -> NumberType {
 fn array_cast(array: ArrayEx, number_type: NumberType) -> ArrayEx {
     array.cast_number(number_type)
 }
-

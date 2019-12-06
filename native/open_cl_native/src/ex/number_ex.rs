@@ -1,10 +1,22 @@
-use rustler::{NifUntaggedEnum, NifUnitEnum};
+use rustler::{NifUnitEnum, NifUntaggedEnum};
 // use std::convert::TryFrom;
+use num_traits::{FromPrimitive, NumCast, ToPrimitive};
 use std::fmt::Debug;
-use num_traits::{NumCast, FromPrimitive, ToPrimitive};
 
-pub unsafe trait Number: Debug + Clone + Copy + Default + PartialEq + Send + Sync +
-    NumCast + FromPrimitive + ToPrimitive + 'static {}
+pub unsafe trait Number:
+    Debug
+    + Clone
+    + Copy
+    + Default
+    + PartialEq
+    + Send
+    + Sync
+    + NumCast
+    + FromPrimitive
+    + ToPrimitive
+    + 'static
+{
+}
 
 macro_rules! impl_number_for {
     ($( $t:ty ),+) => {
@@ -23,7 +35,7 @@ macro_rules! impl_number_typed_t {
                 NumberType::$variant
             }
         }
-    }
+    };
 }
 
 impl_number_typed_t!(u8, U8);
@@ -50,7 +62,6 @@ pub trait NumberTypedT {
 pub trait CastNumber {
     fn cast_number(&self, number_type: NumberType) -> Self;
 }
-
 
 #[derive(NifUnitEnum, Debug, PartialEq, Eq, Clone, Copy)]
 pub enum NumberType {
@@ -155,7 +166,7 @@ macro_rules! impl_num_ex_primitive_conversion {
                 NumEx::$variant(*num)
             }
         }
-    }
+    };
 }
 
 impl_num_ex_primitive_conversion!(i8, I8);
@@ -172,7 +183,7 @@ impl_num_ex_primitive_conversion!(usize, Usize);
 impl_num_ex_primitive_conversion!(isize, Isize);
 
 impl NumberTyped for NumEx {
-   fn number_type(&self) -> NumberType {
+    fn number_type(&self) -> NumberType {
         match self {
             NumEx::U8(..) => NumberType::U8,
             NumEx::I8(..) => NumberType::I8,
@@ -208,7 +219,6 @@ pub enum NumberVector {
     Isize(Vec::<isize>),
 }
 
-
 unsafe fn force_cast_vec<T, S>(mut v: Vec<T>) -> Vec<S> {
     let ptr = v.as_mut_ptr();
     let length = v.len();
@@ -218,26 +228,29 @@ unsafe fn force_cast_vec<T, S>(mut v: Vec<T>) -> Vec<S> {
 }
 
 impl NumberVector {
-    pub fn new<T>(data: Vec<T>) -> NumberVector where T: NumberTypedT {
+    pub fn new<T>(data: Vec<T>) -> NumberVector
+    where
+        T: NumberTypedT,
+    {
         use NumberType as NT;
         use NumberVector as NV;
         // these casts are safe because they actually "change" T to T.
         match T::number_type() {
-            NT::U8 => NV::U8(unsafe{ force_cast_vec::<T, u8>(data) }),
-            NT::I8 => NV::I8(unsafe{ force_cast_vec::<T, i8>(data) }),
-            NT::U16 => NV::U16(unsafe{ force_cast_vec::<T, u16>(data) }),
-            NT::I16 => NV::I16(unsafe{ force_cast_vec::<T, i16>(data) }),
-            NT::U32 => NV::U32(unsafe{ force_cast_vec::<T, u32>(data) }),
-            NT::I32 => NV::I32(unsafe{ force_cast_vec::<T, i32>(data) }),
-            NT::F32 => NV::F32(unsafe{ force_cast_vec::<T, f32>(data) }),
-            NT::U64 => NV::U64(unsafe{ force_cast_vec::<T, u64>(data) }),
-            NT::I64 => NV::I64(unsafe{ force_cast_vec::<T, i64>(data) }),
-            NT::F64 => NV::F64(unsafe{ force_cast_vec::<T, f64>(data) }),
-            NT::Usize => NV::Usize(unsafe{ force_cast_vec::<T, usize>(data) }),
-            NT::Isize => NV::Isize(unsafe{ force_cast_vec::<T, isize>(data) }),
+            NT::U8 => NV::U8(unsafe { force_cast_vec::<T, u8>(data) }),
+            NT::I8 => NV::I8(unsafe { force_cast_vec::<T, i8>(data) }),
+            NT::U16 => NV::U16(unsafe { force_cast_vec::<T, u16>(data) }),
+            NT::I16 => NV::I16(unsafe { force_cast_vec::<T, i16>(data) }),
+            NT::U32 => NV::U32(unsafe { force_cast_vec::<T, u32>(data) }),
+            NT::I32 => NV::I32(unsafe { force_cast_vec::<T, i32>(data) }),
+            NT::F32 => NV::F32(unsafe { force_cast_vec::<T, f32>(data) }),
+            NT::U64 => NV::U64(unsafe { force_cast_vec::<T, u64>(data) }),
+            NT::I64 => NV::I64(unsafe { force_cast_vec::<T, i64>(data) }),
+            NT::F64 => NV::F64(unsafe { force_cast_vec::<T, f64>(data) }),
+            NT::Usize => NV::Usize(unsafe { force_cast_vec::<T, usize>(data) }),
+            NT::Isize => NV::Isize(unsafe { force_cast_vec::<T, isize>(data) }),
         }
     }
-    
+
     pub fn length(&self) -> usize {
         use NumberVector as NV;
         match self {
@@ -323,7 +336,7 @@ macro_rules! impl_number_typed_for_vec {
                 NumberType::$variant
             }
         }
-    }
+    };
 }
 
 impl_number_typed_for_vec!(u8, U8);
@@ -341,8 +354,8 @@ impl_number_typed_for_vec!(isize, Isize);
 
 impl NumberTyped for NumberVector {
     fn number_type(&self) -> NumberType {
-        use NumberVector as NV;
         use NumberType as NT;
+        use NumberVector as NV;
         match self {
             NV::U8(..) => NT::U8,
             NV::I8(..) => NT::I8,
@@ -363,7 +376,7 @@ impl NumberTyped for NumberVector {
 macro_rules! cast_primitive_vec {
     ($t:ty, $data:ident) => {
         $data.iter().map(|num| *num as $t).collect()
-    }
+    };
 }
 
 macro_rules! impl_from_for_vec {
@@ -407,11 +420,14 @@ macro_rules! impl_from_for_vec {
                 }
             }
         }
-        
+
         impl From<Vec<$t>> for NumberVector {
-            fn from(v: Vec<$t>) -> NumberVector where Vec<$t>: NumberTyped {
-                use NumberVector as NV;
+            fn from(v: Vec<$t>) -> NumberVector
+            where
+                Vec<$t>: NumberTyped,
+            {
                 use NumberType as NT;
+                use NumberVector as NV;
                 match v.number_type() {
                     NT::U8 => NV::U8(cast_primitive_vec!(u8, v)),
                     NT::I8 => NV::I8(cast_primitive_vec!(i8, v)),
@@ -428,7 +444,7 @@ macro_rules! impl_from_for_vec {
                 }
             }
         }
-    } 
+    };
 }
 
 impl_from_for_vec!(u8);

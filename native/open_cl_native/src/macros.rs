@@ -3,20 +3,17 @@ macro_rules! impl_native_method_and_nif {
     ($ex_wrapper:ident, $namespace:ident, $func_name:ident, $ret:ty) => {
         impl $ex_wrapper {
             pub fn $func_name(&self) -> OutputEx<$ret> {
-                self.native()
-                .$func_name()
-                .map_err(|e| e.into())
+                self.native().$func_name().map_err(|e| e.into())
             }
         }
-        
+
         paste::item! {
             #[rustler::nif]
             pub fn [<$namespace _self_ $func_name>](item: $ex_wrapper) -> OutputEx<$ret> {
                 item.$func_name()
             }
         }
-        
-    }
+    };
 }
 
 #[macro_export]
@@ -26,22 +23,19 @@ macro_rules! impl_native_method_into_bitflag_and_nif {
             pub fn $func_name(&self) -> OutputEx<Vec<$ret>> {
                 use crate::traits::BitflagEx;
                 self.native()
-                .$func_name()
-                .map_err(|e| e.into())
-                .map(|cl_flag| {
-                    $ret::list_from_bitflag(cl_flag)
-                })
+                    .$func_name()
+                    .map_err(|e| e.into())
+                    .map(|cl_flag| $ret::list_from_bitflag(cl_flag))
             }
         }
-        
+
         paste::item! {
             #[rustler::nif]
             pub fn [<$namespace _self_ $func_name>](item: $ex_wrapper) -> OutputEx<Vec<$ret>> {
                 item.$func_name()
             }
         }
-        
-    }
+    };
 }
 
 #[macro_export]
@@ -104,5 +98,5 @@ macro_rules! impl_bitflag_ex_for {
                 output
             }
         }
-    }
+    };
 }

@@ -1,7 +1,6 @@
-use rustler::Error as RustlerError;
-use rustler::{Env, Term, Encoder};
 use opencl_core::Error as OpenCLError;
-
+use rustler::Error as RustlerError;
+use rustler::{Encoder, Env, Term};
 
 use crate::atoms;
 
@@ -32,15 +31,11 @@ impl Encoder for ErrorEx {
             ErrorEx::OpenCLError(OpenCLError::StatusCode(code, err)) => {
                 let message = format!("{:?}", err);
                 (atoms::status_code_error(), code, message).encode(env)
-            },
+            }
             ErrorEx::OpenCLError(err) => {
                 let message = format!("OpenCL Error {:?}", err);
                 (atoms::error(), message).encode(env)
-            },
+            }
         }
     }
 }
-
-
-
-
