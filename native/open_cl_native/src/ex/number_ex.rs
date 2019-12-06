@@ -190,13 +190,6 @@ impl NumberTyped for NumEx {
     }
 }
 
-#[derive(Debug, Fail, PartialEq, Eq, Clone)]
-pub enum NumberError {
-    #[fail(display = "Failed to cast number of type {:?} into number of type {:?}", _0, _1)]
-    FailedVectorCast(NumberType, NumberType)
-}
-
-
 // #[derive(Debug)]
 #[derive(NifUntaggedEnum, Debug)]
 pub enum NumberVector {

@@ -180,6 +180,7 @@ rustler::init! {
         array_ex::array_number_type,
         array_ex::array_cast,
 
+        
         // TENSOR
         // tensor_ex::tensor_new,
         // tensor_ex::tensor_self_dims,

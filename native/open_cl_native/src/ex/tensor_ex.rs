@@ -11,6 +11,7 @@ use crate::ex::number_ex::{
     NumberType,
     NumberTyped,
     NumberVector,
+    CastNumber,
 };
 use crate::ex::array_ex::ArrayEx;
 
@@ -22,7 +23,7 @@ pub trait Dimension {
     }
 }
 
-#[derive(NifTuple)]
+#[derive(NifTuple, Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct ThreeDims(usize, usize, usize);
 
 impl Dimension for ThreeDims {
@@ -31,7 +32,7 @@ impl Dimension for ThreeDims {
     }
 }
 
-#[derive(NifTuple)]
+#[derive(NifTuple, Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct TwoDims(usize, usize);
 
 impl Dimension for TwoDims {
@@ -40,7 +41,7 @@ impl Dimension for TwoDims {
     }
 }
 
-#[derive(NifTuple)]
+#[derive(NifTuple, Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct OneDim(usize);
 
 impl Dimension for OneDim {
@@ -49,7 +50,7 @@ impl Dimension for OneDim {
     }
 }
 
-#[derive(NifUntaggedEnum)]
+#[derive(NifUntaggedEnum, Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum DimsEx {
     LoneNum(usize),
     One(OneDim),
@@ -67,10 +68,6 @@ impl Dimension for DimsEx {
         }
     }
 }
-impl DimsEx {
-   
-}
-
 
 
 impl From<DimsEx> for Dims {
@@ -188,6 +185,14 @@ impl TensorEx {
     //     data.extend_from_slice(slice);
     // }
 }
+impl CastNumber for TensorEx {
+    fn cast_number(&self, number_type: NumberType) -> TensorEx {
+        let number_vector = self.native().data.read().unwrap().cast_number(number_type);
+        let tensor = Tensor::new(DimsEx::from(self.dims()), number_vector);
+        TensorEx::new(tensor)
+    }
+}
+
 
 #[rustler::nif]
 fn tensor_from_array(dims: DimsEx, array: ArrayEx) -> TensorEx {
@@ -205,5 +210,22 @@ fn tensor_from_number_vector(dims: DimsEx, number_vector: NumberVector) -> Tenso
 fn tensor_self_dims(tensor: TensorEx) -> DimsEx {
     tensor.dims().into()
 }
+
+#[rustler::nif]
+fn tensor_self_number_vector(tensor: TensorEx) -> NumberVector {
+    tensor.number_vector()
+}
+
+#[rustler::nif]
+fn tensor_self_number_type(tensor: TensorEx) -> NumberType {
+    tensor.number_type()
+}
+
+#[rustler::nif]
+fn tensor_self_cast_to_number_type(tensor: TensorEx, number_type: NumberType) -> TensorEx {
+    tensor.cast_number(number_type)
+}
+
+
 
 

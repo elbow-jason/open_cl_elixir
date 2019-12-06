@@ -12,9 +12,6 @@ pub type OutputEx<T> = Result<T, ErrorEx>;
 pub enum ErrorEx {
     #[fail(display = "{:?}", _0)]
     OpenCLError(OpenCLError),
-
-    // #[fail(display = "{:?}", _0)]
-    // TypeError(TypeError)
 }
 
 impl From<OpenCLError> for ErrorEx {

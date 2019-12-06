@@ -195,7 +195,6 @@ fn array_new_filled_with(number_type: NumberType, filler: NumEx, count: usize) -
         NumEx::F64(number) => ArrayEx::filled_with::<f64>(number, count),
         NumEx::Usize(number) => ArrayEx::filled_with::<usize>(number, count),
         NumEx::Isize(number) => ArrayEx::filled_with::<isize>(number, count),
-        got => panic!("ArrayEx::filled_with called with an invalid filler {:?}", got),
     }   
 }
 
