@@ -16,9 +16,6 @@ pub mod session_ex;
 // pub mod tensor_ex;
 pub mod array_ex;
 pub mod number_ex;
-// pub mod context_ex;
-// pub mod command_queue_ex;
-
 pub mod wrapper_ex;
 
 pub use error_ex::{ErrorEx, OutputEx};

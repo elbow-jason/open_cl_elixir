@@ -13,8 +13,6 @@ use super::{
 
 use crate::traits::{NativeWrapper, BitflagEx};
 
-// use crate::platform_ex::PlatformEx;
-
 impl WrapperExResource for Device {}
 
 #[derive(NifStruct)]

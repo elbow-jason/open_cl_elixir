@@ -81,7 +81,7 @@ impl NativeWrapper<Array> for ArrayEx {
 }
 
 impl ArrayEx {
-    pub fn filled_with<T>(number: T, count: usize) -> ArrayEx where T: NumberTypedT + Number {
+    pub fn filled_with<T>(number: T, count: usize) -> ArrayEx where T: NumberTypedT + Number, NumberVector: From<Vec<T>> {
         let numbers: Vec<T> = std::iter::repeat(number).take(count).collect();
         let number_vector = NumberVector::from(numbers);
         ArrayEx::from_number_vector(number_vector)

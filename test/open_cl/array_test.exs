@@ -103,19 +103,59 @@ defmodule OpenCL.ArrayTest do
     end
   end
 
-  describe "array_cast/2" do
-    test "works for u8 to u8" do
+  @all_number_types ~w(u8 i8 u16 i16 u32 i32 f32 u64 i64 f64 usize isize)a
+
+  describe "array_cast/2 with u8 array" do
+    test "can be casted to other types" do
       array = Array.filled_with(:u8, 1, 2)
       assert Array.type(array) == :u8
-      array2 = Array.type_cast(array, :u8)
-      assert Array.type(array2) == :u8
+      Enum.each(@all_number_types, fn number_type ->
+        array2 = Array.type_cast(array, number_type)
+        assert Array.type(array2) == number_type
+      end)
+
     end
 
-    test "works for u8 to i8" do
-      array = Array.filled_with(:u8, 1, 2)
-      assert Array.type(array) == :u8
-      array2 = Array.type_cast(array, :i8)
-      assert Array.type(array2) == :i8
-    end
+    # test "works for u8 to i8" do
+    #   array = Array.filled_with(:u8, 1, 2)
+    #   assert Array.type(array) == :u8
+    #   array2 = Array.type_cast(array, :i8)
+    #   assert Array.type(array2) == :i8
+    # end
+
+    # test "works for u8 to i16" do
+    #   array = Array.filled_with(:u8, 1, 2)
+    #   assert Array.type(array) == :u8
+    #   array2 = Array.type_cast(array, :i16)
+    #   assert Array.type(array2) == :i16
+    # end
+
+    # test "works for u8 to i32" do
+    #   array = Array.filled_with(:u8, 1, 2)
+    #   assert Array.type(array) == :u8
+    #   array2 = Array.type_cast(array, :i32)
+    #   assert Array.type(array2) == :i32
+    # end
+
+    # test "works for u8 to i64" do
+    #   array = Array.filled_with(:u8, 1, 2)
+    #   assert Array.type(array) == :u8
+    #   array2 = Array.type_cast(array, :i64)
+    #   assert Array.type(array2) == :i64
+    # end
+
+    # test "works for u8 to isize" do
+    #   array = Array.filled_with(:u8, 1, 2)
+    #   assert Array.type(array) == :u8
+    #   array2 = Array.type_cast(array, :isize)
+    #   assert Array.type(array2) == :isize
+    # end
+
+    # test "works for u8 to isize" do
+    #   array = Array.filled_with(:u8, 1, 2)
+    #   assert Array.type(array) == :u8
+    #   array2 = Array.type_cast(array, :isize)
+    #   assert Array.type(array2) == :isize
+    # end
   end
 end
