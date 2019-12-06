@@ -13,9 +13,13 @@ defmodule OpenCL.MixProject do
         open_cl_native: [
           mode: rustc_mode(Mix.env())
         ]
-      ]
+      ],
+      elixirc_paths: elixirc_paths(Mix.env()),
     ]
   end
+
+  def elixirc_paths(:test), do: ["lib", "test/support"]
+  def elixirc_paths(_), do: ["lib"]
 
   def rustc_mode(:prod), do: :release
   def rustc_mode(:test), do: :debug
