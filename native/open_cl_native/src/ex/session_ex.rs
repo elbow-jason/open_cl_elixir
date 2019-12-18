@@ -1,7 +1,10 @@
 use std::fmt;
-use std::ops::Deref;
 
-use opencl_core::Session;
+use opencl_core::{
+    Session,
+    Program,
+    CommandQueue,
+};
 use rustler::resource::ResourceArc;
 use rustler::{Encoder, NifStruct};
 
@@ -55,7 +58,26 @@ impl SessionEx {
     pub fn clone_native(&self) -> Session {
         self.native().clone()
     }
+
+    pub fn native(&self) -> &Session {
+        &self.__native__.item
+    }
+
+    pub fn program(&self) -> &Program {
+        self.native().program()
+    }
+
+    pub fn command_queue(&self) -> &CommandQueue {
+        self.native().command_queue()
+    }
 }
+
+impl From<SessionEx> for Session {
+    fn from(sess: SessionEx) -> Session {
+        sess.clone_native()
+    }
+}
+
 
 #[rustler::nif]
 fn session_create_with_src(device: DeviceEx, src: String) -> OutputEx<SessionEx> {

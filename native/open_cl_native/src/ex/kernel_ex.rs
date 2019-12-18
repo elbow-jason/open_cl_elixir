@@ -1,37 +1,27 @@
-// use std::fmt;
-// use opencl_core::Kernel;
+use opencl_core::{Kernel, KernelArg};
 
-// use rustler::resource::ResourceArc;
-// use rustler::{Encoder, NifStruct};
+use rustler::{Encoder, NifUntaggedEnum, NifUnitEnum};
+use crate::ex::{NumEx, DeviceBufferEx, SessionEx};
 
-// use super::{
-//     WrapperEx,
-//     WrapperExResource,
-//     OutputEx,
-// };
+#[derive(NifUntaggedEnum)]
+pub enum KernelArgEx {
+    NumEx(NumEx),
+    DeviceBufferEx(DeviceBufferEx),
+}
 
-// use crate::traits::NativeWrapper;
+impl KernelArg for KernelArgEx {
 
-// use crate::device_ex::DeviceEx;
+}
 
-// impl WrapperExResource for Kernel {}
+#[derive(NifUnitEnum)]
+pub enum KernelStatus {
+    Ok,
+    Error,
+}
 
-// #[derive(NifStruct)]
-// #[must_use]
-// #[module = "OpenCL.Kernel"]
-// pub struct KernelEx {
-//     name: String,
-//     args: Vec<KernelExArg>,
-// }
-
-// impl fmt::Debug for KernelEx {
-//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-//         write!(f, "KernelEx {{ native: {:?} }}", self.native())
-//     }
-// }
-
-// // device
-// #[rustler::nif]
-// fn kernel_sync_execute(session: SessionEx, kernel: KernelEx) -> OutputEx<Atom> {
-//     session.native()
-// }
+#[rustler::nif]
+fn execute_kernel_sync(session: SessionEx, name: &str, args: Vec<KernelArgEx>) -> KernelStatus {
+    let kernel = Kernel::create(session.program(), name);
+    kernel.a
+    KernelStatus::Ok
+}

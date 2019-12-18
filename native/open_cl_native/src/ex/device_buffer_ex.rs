@@ -1,148 +1,105 @@
-use std::default::Default;
+
 use std::fmt;
+use std::fmt::Debug;
+use std::sync::RwLock;
 
 use opencl_core::DeviceMem;
 use rustler::resource::ResourceArc;
+use rustler::{Encoder, NifStruct, NifUnitEnum};
 
-use rustler::{Encoder, NifStruct};
-
-use crate::traits::NativeWrapper;
-use super::{WrapperEx, OutputEx, WrapperExResource, DeviceEx};
-
-use opencl_core::{Dims, Session, Work};
+use opencl_core::{Dims, Session};
+use opencl_core::device_mem::flags::MemFlags;
+use crate::ex::ErrorEx;
 use crate::ex::session_ex::SessionEx;
-use crate::ex::number_ex::NumberTyped;
+use crate::ex::number_ex::{NumberTyped, NumberType, NumberVector};
+use crate::ex::{DimsEx};
+use crate::traits::NativeWrapper;
+// impl WrapperExResource for DeviceBuffer {}
 
+#[derive(Debug)]
+pub struct BufferWrapper<T> where T: Debug + Sync + Send {
+    device_mem: RwLock<DeviceMem<T>>,
+    session: Session,
+    mem_flags: MemFlags,
+    dims: Dims
+}
 
-impl WrapperExResource for DeviceBuffer {}
+impl<T> BufferWrapper<T> where T: Debug + Sync + Send {
+    pub fn new(session: Session, dims: Dims, data: &[T], mem_flags: MemFlags) -> Result<BufferWrapper<T>, ErrorEx> {
+        let device_mem = DeviceMem::create_from(session.context(), mem_flags, data)?;
+        
+        Ok(BufferWrapper {
+            device_mem: RwLock::new(device_mem),
+            session,
+            mem_flags,
+            dims
+        })
+    }
+}
 
-
+#[derive(Debug)]
 pub enum DeviceBuffer {
-    U8{device_mem: DeviceMem<u8>, session: Session, mem_flags: MemFlags, dims: Dims},
-    I8{device_mem: DeviceMem<i8>, session: Session, mem_flags: MemFlags, dims: Dims},
-    U16{device_mem: DeviceMem<u16>, session: Session, mem_flags: MemFlags, dims: Dims},
-    I16{device_mem: DeviceMem<i16>, session: Session, mem_flags: MemFlags, dims: Dims},
-    U32{device_mem: DeviceMem<u32>, session: Session, mem_flags: MemFlags, dims: Dims},
-    I32{device_mem: DeviceMem<i32>, session: Session, mem_flags: MemFlags, dims: Dims},
-    F32{device_mem: DeviceMem<f32>, session: Session, mem_flags: MemFlags, dims: Dims},
-    U64{device_mem: DeviceMem<u64>, session: Session, mem_flags: MemFlags, dims: Dims},
-    I64{device_mem: DeviceMem<i64>, session: Session, mem_flags: MemFlags, dims: Dims},
-    F64{device_mem: DeviceMem<f64>, session: Session, mem_flags: MemFlags, dims: Dims},
-    Usize{device_mem: DeviceMem<usize>, session: Session, mem_flags: MemFlags, dims: Dims},
-    Isize{device_mem: DeviceMem<isize>, session: Session, mem_flags: MemFlags, dims: Dims},
+    U8(BufferWrapper<u8>),
+    // I8(DeviceMemBuffer<i8>),
+    // U16(DeviceMemBuffer<u16>),
+    // I16(DeviceMemBuffer<i16>),
+    // U32(DeviceMemBuffer<u32>),
+    // I32(DeviceMemBuffer<i32>),
+    // F32(DeviceMemBuffer<f32>),
+    // U64(DeviceMemBuffer<u64>),
+    // I64(DeviceMemBuffer<i64>),
+    // F64(DeviceMemBuffer<f64>),
+    // Usize(DeviceMemBuffer<usize>),
+    // Isize(DeviceMemBuffer<isize>),
 }
 
 impl NumberTyped for DeviceBuffer {
-    use DeviceBuffer as D;
-    use NumberType as NT;
+    
     fn number_type(&self) -> NumberType {
-        D::U8(..) => NT::U8,
-        D::I8(..) => NT::I8,
-        D::U16(..) => NT::U16,
-        D::I16(..) => NT::I16,
-        D::U32(..) => NT::U32,
-        D::I32(..) => NT::I32,
-        D::F32(..) => NT::F32,
-        D::U64(..) => NT::U64,
-        D::I64(..) => NT::I64,
-        D::F64(..) => NT::F64,
-        D::Usize(..) => NT::Usize,
-        D::Isize(..) => NT::Isize,
+        use DeviceBuffer as D;
+        use NumberType as NT;
+        match self {
+            D::U8(..) => NT::U8,
+            // D::I8(..) => NT::I8,
+            // D::U16(..) => NT::U16,
+            // D::I16(..) => NT::I16,
+            // D::U32(..) => NT::U32,
+            // D::I32(..) => NT::I32,
+            // D::F32(..) => NT::F32,
+            // D::U64(..) => NT::U64,
+            // D::I64(..) => NT::I64,
+            // D::F64(..) => NT::F64,
+            // D::Usize(..) => NT::Usize,
+            // D::Isize(..) => NT::Isize,
+        }
     }
 }
 
-macro_rules! create_device_buffer {
-    ($variant:ident, $t:ty, $session:ident, $dims:ident, $mem_flags:ident, $data:ident) => {
-        DeviceBuffer::$variant{
-                
-                session: $session.clone(),
-                mem_flags: $mem_flags,
-                dims: $dims.into(),
-                device_mem: DeviceMem<$t>::create_from($session.context(), $mem_flags, $data),
-            }
-    }
-} 
+// macro_rules! create_device_buffer {
+//     ($variant:ident, $t:ty, $session:ident, $dims:ident, $mem_flags:ident, $data:ident) => {
+//         DeviceBuffer::$variant{
+//                 session: $session.clone(),
+//                 mem_flags: $mem_flags,
+//                 dims: $dims.into(),
+//                 device_mem: ,
+//             }
+//     }
+// } 
 
 impl DeviceBuffer {
-    fn from_number_vector<D>(
+    fn new(
         session: Session,
-        dims: D,
-        mem_flags: MemFlags,
+        dims: Dims,
         number_vector: NumberVector,
-    ) -> DeviceBuffer where D: Into<Dims> 
-    {
+        mem_flags: MemFlags,
+    ) -> DeviceBuffer {
         use DeviceBuffer as B;
         use NumberVector as NV;
         match number_vector {
-            NV::U8(data) => create_device_buffer(U8, u8, session, dims mem_flags, data),
-            NV::I8(data) => B::I8{
-                device_mem: DeviceMem<i8>::create_from(session.context(), mem_flags, data),
-                session: session.clone(),
-                dims: dims.into(),
-                mem_flags,
-            }
-            NV::U16(data) => B::U16{
-                device_mem: DeviceMem<u16::create_from>(session.context(), mem_flags, data),
-                session: session.clone(),
-                dims: dims.into(),
-                mem_flags,
-            },
-            NV::I16(data) => D::I16{
-                device_mem: DeviceMem<i16::create_from>(session.context(), mem_flags, data),
-                session: session.clone(),
-                dims: $dims.into(),
-                mem_flags,
-            }
-            NV::U32(data) => D::U32{
-                device_mem: DeviceMem<u32::create_from>(session.context(), mem_flags, data),
-                session: session.clone(),
-                dims: dims.into(),
-                mem_flags,
-            }
-            NV::I32(data) => D::I32{
-                device_mem: DeviceMem<i32::create_from>(session.context(), mem_flags, data),
-                session: session.clone()
-                dims: dims.into(),
-                mem_flags,
-            }
-            NV::F32(data) => D::F32{
-                device_mem: DeviceMem<f32::create_from>(session.context(), mem_flags, data),
-                session: session.clone(),
-                dims: dims.into(),
-                mem_flags,
-            }
-            NV::U64(data) => D::U64{
-                device_mem: DeviceMem<u64::create_from>(session.context(), mem_flags, data),
-                session: session.clone(),
-                dims: dims.into(),
-                mem_flags,
-            }
-            NV::I64(data) => D::I64{
-                device_mem: DeviceMem<i64::create_from>(session.context(), mem_flags, data),
-                session: session.clone(),
-                dims: dims.into(),
-                mem_flags,
-            }
-            NV::F64(data) => D::F64{
-                device_mem: DeviceMem<f64::create_from>(session.context(), mem_flags, data),
-                session: session.clone(),
-                dims: dims.into(),
-                mem_flags,
-            }
-            NV::Usize(data) => D::Usize{
-                device_mem: DeviceMem<usize>::create_fromze>(session.context(), mem_flags, data),
-                session: session.clone(),
-                dims: dims.into(),
-                mem_flags,
-            }
-            NV::Isize(data) => D::Isize{
-                device_mem: DeviceMem<isize>::create_fromze>(session.context(), mem_flags, data),
-                session: session.clone(),
-                dims: dims.into(),
-                mem_flags,
-            }
+            // Fix me unwrap vs result
+            NV::U8(data) => B::U8(BufferWrapper::new(session, dims, &data[..], mem_flags).unwrap()),
+            _ => panic!("NOOOOOOOPE"),
         }
-        
     }
 }
 
@@ -150,9 +107,8 @@ impl DeviceBuffer {
 #[derive(NifStruct)]
 #[must_use]
 #[module = "OpenCL.DeviceBuffer"]
-pub struct DeviceBufferEx<T> {
-    __native__: ResourceArc<WrapperEx<DeviceMem<T>>>,
-    __session__: ResourceArc<WrapperEx<Session>>
+pub struct DeviceBufferEx {
+    __native__: ResourceArc<DeviceBuffer>,
 }
 
 impl fmt::Debug for DeviceBufferEx {
@@ -162,39 +118,45 @@ impl fmt::Debug for DeviceBufferEx {
 }
 
 
-impl NativeWrapper<DeviceMem<T>> for DeviceBufferEx<T> {
+impl NativeWrapper<DeviceBuffer> for DeviceBufferEx {
     fn native(&self) -> &DeviceBuffer {
-        &self.__native__.item
+        &self.__native__
     }
 }
 
-impl<T> DeviceBufferEx<T> {
-
-    pub fn new(device_mem: DeviceMem<T>) -> DeviceBufferEx<T> {
+impl DeviceBufferEx {
+    pub fn new(device_buffer: DeviceBuffer) -> DeviceBufferEx {
         DeviceBufferEx {
-            __native__: device_buffer.into_resource_arc(),
+            __native__: ResourceArc::new(device_buffer),
+        }
+    }
+}
+
+#[derive(NifUnitEnum, Debug, PartialEq, Eq, Clone, Copy)]
+pub enum BufferAccess {
+    ReadOnly,
+    WriteOnly,
+    ReadWrite,
+}
+
+impl From<BufferAccess> for MemFlags {
+    fn from(access: BufferAccess) -> MemFlags {
+        match access {
+            BufferAccess::ReadOnly => MemFlags::READ_ONLY_ALLOC_HOST_PTR,
+            BufferAccess::WriteOnly => MemFlags::WRITE_ONLY_ALLOC_HOST_PTR,
+            BufferAccess::ReadWrite => MemFlags::READ_WRITE_ALLOC_HOST_PTR,
         }
     }
 }
 
 #[rustler::nif]
-fn device_buffer_default() -> DeviceBufferEx {
-    DeviceBufferEx::default()
+fn buffer_new(
+    session: SessionEx,
+    dims: DimsEx,
+    number_vector: NumberVector,
+    access: BufferAccess,
+) -> DeviceBufferEx {
+    let buf = DeviceBuffer::new(session.into(), dims.into(), number_vector, access.into());
+    DeviceBufferEx::new(buf)
 }
 
-#[rustler::nif]
-fn device_buffer_list_all() -> OutputEx<Vec<DeviceBufferEx>> {
-    DeviceBufferEx::all()
-}
-
-impl_native_method_into_other_and_nif!(DeviceBufferEx, device_buffer, all_devices, Vec<DeviceEx>);
-impl_native_method_into_other_and_nif!(DeviceBufferEx, device_buffer, cpu_devices, Vec<DeviceEx>);
-impl_native_method_into_other_and_nif!(DeviceBufferEx, device_buffer, gpu_devices, Vec<DeviceEx>);
-impl_native_method_into_other_and_nif!(DeviceBufferEx, device_buffer, accelerator_devices, Vec<DeviceEx>);
-impl_native_method_into_other_and_nif!(DeviceBufferEx, device_buffer, custom_devices, Vec<DeviceEx>);
-
-impl_native_method_and_nif!(DeviceBufferEx, device_buffer, name, String);
-impl_native_method_and_nif!(DeviceBufferEx, device_buffer, version, String);
-impl_native_method_and_nif!(DeviceBufferEx, device_buffer, profile, String);
-impl_native_method_and_nif!(DeviceBufferEx, device_buffer, vendor, String);
-impl_native_method_and_nif!(DeviceBufferEx, device_buffer, extensions, Vec<String>);
