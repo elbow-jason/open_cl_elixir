@@ -1,4 +1,7 @@
 use rustler::{NifUnitEnum, NifUntaggedEnum};
+
+use opencl_core::kernel::kernel_arg::{KernelArg, KernelArgSizeAndPointer};
+
 // use std::convert::TryFrom;
 use num_traits::{FromPrimitive, NumCast, ToPrimitive};
 use std::fmt::Debug;
@@ -111,6 +114,25 @@ impl CastNumber for NumEx {
             NT::F64 => NumEx::F64(self.into()),
             NT::Usize => NumEx::Usize(self.into()),
             NT::Isize => NumEx::Isize(self.into()),
+        }
+    }
+}
+
+impl KernelArg for NumEx {
+    unsafe fn as_kernel_arg(&self) -> KernelArgSizeAndPointer {
+        match self {
+            NumEx::I8(num) => num.as_kernel_arg(),
+            NumEx::U8(num) => num.as_kernel_arg(),
+            NumEx::U16(num) => num.as_kernel_arg(),
+            NumEx::I16(num) => num.as_kernel_arg(),
+            NumEx::U32(num) => num.as_kernel_arg(),
+            NumEx::I32(num) => num.as_kernel_arg(),
+            NumEx::F32(num) => num.as_kernel_arg(),
+            NumEx::U64(num) => num.as_kernel_arg(),
+            NumEx::I64(num) => num.as_kernel_arg(),
+            NumEx::F64(num) => num.as_kernel_arg(),
+            NumEx::Usize(num) => num.as_kernel_arg(),
+            NumEx::Isize(num) => num.as_kernel_arg(),
         }
     }
 }

@@ -1,13 +1,11 @@
 
 use std::fmt;
 use std::fmt::Debug;
-use std::sync::RwLock;
 
-use opencl_core::DeviceMem;
 use rustler::resource::ResourceArc;
 use rustler::{Encoder, NifStruct, NifUnitEnum};
 
-use opencl_core::{Dims, Session};
+use opencl_core::{DeviceMem, Dims, Session, KernelArg, KernelArgSizeAndPointer};
 use opencl_core::device_mem::flags::MemFlags;
 use crate::ex::ErrorEx;
 use crate::ex::session_ex::SessionEx;
@@ -17,8 +15,9 @@ use crate::traits::NativeWrapper;
 // impl WrapperExResource for DeviceBuffer {}
 
 #[derive(Debug)]
+#[repr(C)]
 pub struct BufferWrapper<T> where T: Debug + Sync + Send {
-    device_mem: RwLock<DeviceMem<T>>,
+    device_mem: DeviceMem<T>,
     session: Session,
     mem_flags: MemFlags,
     dims: Dims
@@ -29,11 +28,17 @@ impl<T> BufferWrapper<T> where T: Debug + Sync + Send {
         let device_mem = DeviceMem::create_from(session.context(), mem_flags, data)?;
         
         Ok(BufferWrapper {
-            device_mem: RwLock::new(device_mem),
+            device_mem: device_mem,
             session,
             mem_flags,
             dims
         })
+    }
+}
+
+impl<T> KernelArg for BufferWrapper<T> where T: Debug + Sync + Send {
+    unsafe fn as_kernel_arg(&self) -> KernelArgSizeAndPointer {
+        self.device_mem.as_kernel_arg()
     }
 }
 
@@ -71,6 +76,15 @@ impl NumberTyped for DeviceBuffer {
             // D::F64(..) => NT::F64,
             // D::Usize(..) => NT::Usize,
             // D::Isize(..) => NT::Isize,
+        }
+    }
+}
+
+impl KernelArg for DeviceBuffer {
+    unsafe fn as_kernel_arg(&self) -> KernelArgSizeAndPointer {
+        use DeviceBuffer as D;
+        match self {
+            D::U8(d) => d.as_kernel_arg(),
         }
     }
 }
@@ -129,6 +143,13 @@ impl DeviceBufferEx {
         DeviceBufferEx {
             __native__: ResourceArc::new(device_buffer),
         }
+    }
+}
+
+
+impl KernelArg for DeviceBufferEx {
+    unsafe fn as_kernel_arg(&self) -> KernelArgSizeAndPointer {
+        self.native().as_kernel_arg()
     }
 }
 

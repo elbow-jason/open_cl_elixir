@@ -1,4 +1,4 @@
-use opencl_core::Dims;
+use opencl_core::{Dims, Volumetric};
 use rustler::{NifTuple, NifUntaggedEnum};
 // use crate::traits::NativeWrapper;
 
@@ -73,6 +73,17 @@ impl From<Dims> for DimsEx {
             Dims::One(x) => DimsEx::One(OneDim(x)),
             Dims::Two(x, y) => DimsEx::Two(TwoDims(x, y)),
             Dims::Three(x, y, z) => DimsEx::Three(ThreeDims(x, y, z)),
+        }
+    }
+}
+
+impl From<DimsEx> for Volumetric {
+    fn from(dims: DimsEx) -> Volumetric {
+         match dims {
+            DimsEx::LoneNum(x) => (x,).into(),
+            DimsEx::One(OneDim(x)) => (x,).into(),
+            DimsEx::Two(TwoDims(x, y)) => (x, y).into(),
+            DimsEx::Three(ThreeDims(x, y, z)) => (x, y, z).into(),
         }
     }
 }
