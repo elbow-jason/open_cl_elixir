@@ -1,10 +1,6 @@
 use std::fmt;
 
-use opencl_core::{
-    Session,
-    Program,
-    CommandQueue,
-};
+use opencl_core::{CommandQueue, Program, Session};
 use rustler::resource::ResourceArc;
 use rustler::{Encoder, NifStruct};
 
@@ -19,6 +15,7 @@ impl WrapperExResource for Session {}
 #[derive(NifStruct)]
 #[must_use]
 #[module = "OpenCL.Session"]
+#[repr(C)]
 pub struct SessionEx {
     __native__: ResourceArc<WrapperEx<Session>>,
     src: String,
@@ -78,7 +75,6 @@ impl From<SessionEx> for Session {
     }
 }
 
-
 #[rustler::nif]
 fn session_create_with_src(device: DeviceEx, src: String) -> OutputEx<SessionEx> {
     SessionEx::create(&device, src)
@@ -88,9 +84,6 @@ fn session_create_with_src(device: DeviceEx, src: String) -> OutputEx<SessionEx>
 fn session_self_device(session: SessionEx) -> DeviceEx {
     session.clone_device_ex()
 }
-
-// #[rustler::nif]
-// fn session_self_kernel_sync_execute(session: SessionEx, kernel: KernelEx) -> OutputEx {}
 
 #[macro_export]
 macro_rules! impl_session_method_and_nif {

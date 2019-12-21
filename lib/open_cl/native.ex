@@ -4,7 +4,6 @@ defmodule OpenCL.Native do
   alias OpenCL.Array
   alias OpenCL.Device
   alias OpenCL.Platform
-  alias OpenCL.Tensor
 
   import OpenCL.NifNotLoadedError, only: [err: 0]
 
@@ -462,16 +461,11 @@ defmodule OpenCL.Native do
 
   def array_cast(_array, _number_type), do: err()
 
-  #  TENSOR
-  @spec tensor_new(dims, [float]) :: Tensor.t()
-  def tensor_new(_dims, _float_data), do: err()
+  @type buffer_access :: :read_only | :write_only | :read_write
 
-  @spec tensor_self_dims(Tensor.t()) :: dims()
-  def tensor_self_dims(_tensor), do: err()
+  def buffer_build_from_array(_session, _dims, _number_type, _array, _access), do: err()
 
-  @spec tensor_self_extend_tensor(Tensor.t(), Tensor.t()) :: Tensor.t()
-  def tensor_self_extend_tensor(_left_tensor, _right_rensor), do: err()
+  def buffer_to_array(_buffer), do: err()
 
-  @spec tensor_self_extend_vec(Tensor.t(), [float]) :: Tensor.t()
-  def tensor_self_extend_vec(_tensor, _list_of_f32), do: err()
+  def kernel_execute_sync(_session, _name, _dims, _args), do: err()
 end

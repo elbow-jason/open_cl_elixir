@@ -1,8 +1,8 @@
-use opencl_core::{Kernel, KernelArg, KernelArgSizeAndPointer, Work};
+use opencl_core::{Kernel, KernelArg, KernelArgSizeAndPointer, Work, Dims};
 
-use rustler::{NifUntaggedEnum, NifUnitEnum};
-use rustler::types::Decoder;
-use crate::ex::{NumEx, DeviceBufferEx, SessionEx, DimsEx};
+use crate::ex::{DeviceBufferEx, DimsEx, NumEx, SessionEx};
+
+use rustler::{NifUnitEnum, NifUntaggedEnum};
 
 #[derive(NifUntaggedEnum, Debug)]
 pub enum KernelArgEx {
@@ -26,14 +26,34 @@ pub enum KernelStatus {
     Error,
 }
 
-
-
 #[rustler::nif]
-fn execute_kernel_sync(session: SessionEx, name: &str, dims: DimsEx) -> KernelStatus {
+pub fn kernel_execute_sync(
+    session: SessionEx,
+    name: &str,
+    dims: DimsEx,
+    args: Vec<KernelArgEx>,
+) -> KernelStatus {
     let kernel = Kernel::create(session.program(), name).unwrap();
-    // for (i, arg) in args.iter().enumerate() {
-    //     kernel.set_arg(i, arg).unwrap();
-    // }
-    let work = Work::new(dims);
+    for (i, arg) in args.iter().enumerate() {
+        kernel.set_arg(i, arg).unwrap();
+    };
+    let work_dims: Dims = dims.into();
+    let work = Work::new(work_dims);
+    // let vol = work.global_work_size();
+    let _event = session
+        .command_queue()
+        .sync_enqueue_kernel(&kernel, &work)
+        .unwrap();
     KernelStatus::Ok
 }
+
+// #[rustler::nif]
+// pub fn kernel_execute_sync(_session: SessionEx) -> KernelStatus {
+//     // let kernel = Kernel::create(session.program(), &name[..]).unwrap();
+//     // for (i, arg) in args.iter().enumerate() {
+//     //     kernel.set_arg(i, arg).unwrap();
+//     // }
+//     // let work = Work::new(dims);
+//     // let _event = session.command_queue().sync_enqueue_kernel(&kernel, &work).unwrap();
+//     KernelStatus::Ok
+// }

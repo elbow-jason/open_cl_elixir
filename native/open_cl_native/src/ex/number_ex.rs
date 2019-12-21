@@ -250,15 +250,6 @@ unsafe fn force_cast_vec<T, S>(mut v: Vec<T>) -> Vec<S> {
     Vec::from_raw_parts(ptr as *mut S, length, capacity)
 }
 
-// #[inline]
-// unsafe fn force_cast_slice<T, S>(mut slice: &[T]) -> &[S] {
-//     let ptr = v.as_ptr();
-//     let length = v.len();
-//     let capacity = v.capacity();
-//     std::mem::forget(v);
-//     std::slice::from_raw_parts(ptr as *const S, length, capacity)
-// }
-
 impl NumberVector {
     pub fn new<T>(data: Vec<T>) -> NumberVector
     where
@@ -301,24 +292,6 @@ impl NumberVector {
         }
     }
 
-    pub fn clone(&self) -> NumberVector {
-        use NumberVector as NV;
-        match self {
-            NV::U8(v) => NV::U8(v.clone()),
-            NV::I8(v) => NV::I8(v.clone()),
-            NV::U16(v) => NV::U16(v.clone()),
-            NV::I16(v) => NV::I16(v.clone()),
-            NV::U32(v) => NV::U32(v.clone()),
-            NV::I32(v) => NV::I32(v.clone()),
-            NV::F32(v) => NV::F32(v.clone()),
-            NV::U64(v) => NV::U64(v.clone()),
-            NV::I64(v) => NV::I64(v.clone()),
-            NV::F64(v) => NV::F64(v.clone()),
-            NV::Usize(v) => NV::Usize(v.clone()),
-            NV::Isize(v) => NV::Isize(v.clone()),
-        }
-    }
-
     pub fn push(&mut self, num_ex: NumEx) {
         use NumberVector as NV;
         match self {
@@ -336,7 +309,7 @@ impl NumberVector {
             NV::Isize(ref mut this_vec) => this_vec.push(num_ex.into()),
         }
     }
-    
+
     pub fn extend(&mut self, other: &NumberVector) {
         use NumberVector as NV;
         match self {
@@ -355,6 +328,55 @@ impl NumberVector {
         }
     }
 }
+
+impl Clone for NumberVector {
+    fn clone(&self) -> NumberVector {
+        use NumberVector as NV;
+        match self {
+            NV::U8(v) => NV::U8(v.clone()),
+            NV::I8(v) => NV::I8(v.clone()),
+            NV::U16(v) => NV::U16(v.clone()),
+            NV::I16(v) => NV::I16(v.clone()),
+            NV::U32(v) => NV::U32(v.clone()),
+            NV::I32(v) => NV::I32(v.clone()),
+            NV::F32(v) => NV::F32(v.clone()),
+            NV::U64(v) => NV::U64(v.clone()),
+            NV::I64(v) => NV::I64(v.clone()),
+            NV::F64(v) => NV::F64(v.clone()),
+            NV::Usize(v) => NV::Usize(v.clone()),
+            NV::Isize(v) => NV::Isize(v.clone()),
+        }
+    }
+}
+
+macro_rules! define_slice_of_t {
+    ($t:ident, $variant:ident) => {
+        paste::item! {
+            impl NumberVector {
+                pub fn [<slice_ $t>]<'a>(&'a self) -> Option<&'a[$t]> {
+                    if let NumberVector::$variant(data) = self {
+                        Some(&data[..])
+                    } else {
+                        None
+                    }
+                }
+            }
+        }
+    };
+}
+
+define_slice_of_t!(u8, U8);
+define_slice_of_t!(i8, I8);
+define_slice_of_t!(u16, U16);
+define_slice_of_t!(i16, I16);
+define_slice_of_t!(u32, U32);
+define_slice_of_t!(i32, I32);
+define_slice_of_t!(f32, F32);
+define_slice_of_t!(u64, U64);
+define_slice_of_t!(i64, I64);
+define_slice_of_t!(f64, F64);
+define_slice_of_t!(usize, Usize);
+define_slice_of_t!(isize, Isize);
 
 macro_rules! impl_number_typed_for_vec {
     ($t:ty, $variant:ident) => {

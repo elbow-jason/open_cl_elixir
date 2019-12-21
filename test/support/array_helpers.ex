@@ -72,6 +72,7 @@ defmodule OpenCL.Test.ArrayHelpers do
   defmacro test_to_list(number_type, data) do
     quote bind_quoted: [number_type: number_type, data: data] do
       alias OpenCL.Array
+
       test "can turn an Array to a list for type #{number_type}" do
         array = Array.new(unquote(number_type), unquote(data))
         assert Array.to_list(array) == unquote(data)
@@ -163,6 +164,7 @@ defmodule OpenCL.Test.ArrayHelpers do
 
   @float_types [:f32, :f64]
   defguard is_float_t(x) when x in @float_types
+
   def convert(t, data) when is_list(data) do
     Enum.map(data, fn item -> convert(t, item) end)
   end

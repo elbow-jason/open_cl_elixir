@@ -11,7 +11,7 @@ crate-type = ["dylib"]
 
 [dependencies]
 rustler = { git = "https://github.com/elbow-jason/rustler", branch = "add-return-term-to-error" }
-opencl-core = {git = "https://github.com/elbow-jason/open_cl_rust", rev = "daf8b7b"}
+opencl-core = {git = "https://github.com/elbow-jason/open_cl_rust", rev = "f0edd69"}
 serde_rustler = "0.0.3"
 failure = "0.1.6"
 paste = "0.1.6"
@@ -20,3 +20,4 @@ ndarray = "0.13.0"
 num = "0.2.0"
 num-complex = "0.2.3"
 num-traits = "0.2.10"
+byteorder = "1.3.2"

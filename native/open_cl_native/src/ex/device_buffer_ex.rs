@@ -1,3 +1,4 @@
+use num_traits::Num;
 
 use std::fmt;
 use std::fmt::Debug;
@@ -5,38 +6,69 @@ use std::fmt::Debug;
 use rustler::resource::ResourceArc;
 use rustler::{Encoder, NifStruct, NifUnitEnum};
 
-use opencl_core::{DeviceMem, Dims, Session, KernelArg, KernelArgSizeAndPointer};
-use opencl_core::device_mem::flags::MemFlags;
-use crate::ex::ErrorEx;
+use crate::ex::number_ex::{NumberType, NumberTyped, NumberVector, Number};
+use crate::ex::array_ex::{ArrayEx};
 use crate::ex::session_ex::SessionEx;
-use crate::ex::number_ex::{NumberTyped, NumberType, NumberVector};
-use crate::ex::{DimsEx};
+use crate::ex::DimsEx;
+use crate::ex::ErrorEx;
 use crate::traits::NativeWrapper;
+use opencl_core::device_mem::flags::MemFlags;
+use opencl_core::{DeviceMem, Dims, KernelArg, KernelArgSizeAndPointer, Session};
+use opencl_core::utils::{vec_filled_with};
 // impl WrapperExResource for DeviceBuffer {}
 
 #[derive(Debug)]
 #[repr(C)]
-pub struct BufferWrapper<T> where T: Debug + Sync + Send {
+pub struct BufferWrapper<T>
+where
+    T: Debug + Sync + Send + Number + Num,
+{
     device_mem: DeviceMem<T>,
     session: Session,
-    mem_flags: MemFlags,
-    dims: Dims
+    buffer_access: BufferAccess,
+    dims: Dims,
 }
 
-impl<T> BufferWrapper<T> where T: Debug + Sync + Send {
-    pub fn new(session: Session, dims: Dims, data: &[T], mem_flags: MemFlags) -> Result<BufferWrapper<T>, ErrorEx> {
-        let device_mem = DeviceMem::create_from(session.context(), mem_flags, data)?;
-        
+impl<T> BufferWrapper<T>
+where
+    T: Debug + Sync + Send + Number + Num,
+{
+    pub fn new(
+        session: Session,
+        dims: Dims,
+        data: Vec<T>,
+        buffer_access: BufferAccess,
+    ) -> Result<BufferWrapper<T>, ErrorEx> where T: Debug {
+        let device_mem = match buffer_access {
+            BufferAccess::ReadOnly => DeviceMem::create_read_only_from(session.context(), &data[..]),
+            BufferAccess::WriteOnly => DeviceMem::create_write_only_from(session.context(), &data[..]),
+            BufferAccess::ReadWrite => DeviceMem::create_read_write_from(session.context(), &data[..]),
+        }?;
+
         Ok(BufferWrapper {
-            device_mem: device_mem,
+            device_mem,
             session,
-            mem_flags,
-            dims
+            buffer_access,
+            dims,
         })
+    }
+
+    pub fn read(&self) -> Vec<T> {
+        let len = self.dims.n_items();
+        let zero = T::zero();
+        let mut data = vec_filled_with(zero, len);
+        self.session
+            .command_queue()
+            .read_buffer(&self.device_mem, &mut data[..])
+            .unwrap();
+        data
     }
 }
 
-impl<T> KernelArg for BufferWrapper<T> where T: Debug + Sync + Send {
+impl<T> KernelArg for BufferWrapper<T>
+where
+    T: Debug + Sync + Send + Number + Num,
+{
     unsafe fn as_kernel_arg(&self) -> KernelArgSizeAndPointer {
         self.device_mem.as_kernel_arg()
     }
@@ -58,8 +90,8 @@ pub enum DeviceBuffer {
     // Isize(DeviceMemBuffer<isize>),
 }
 
+
 impl NumberTyped for DeviceBuffer {
-    
     fn number_type(&self) -> NumberType {
         use DeviceBuffer as D;
         use NumberType as NT;
@@ -80,11 +112,32 @@ impl NumberTyped for DeviceBuffer {
     }
 }
 
+// impl 
+// BufferWrapper::new::<u8>(session, dims, data, mem_flags).unwrap()
+
 impl KernelArg for DeviceBuffer {
     unsafe fn as_kernel_arg(&self) -> KernelArgSizeAndPointer {
         use DeviceBuffer as D;
         match self {
             D::U8(d) => d.as_kernel_arg(),
+        }
+    }
+}
+
+impl From<DeviceBuffer> for NumberVector {
+    fn from(d: DeviceBuffer) -> NumberVector {
+        use DeviceBuffer as D;
+        match d {
+            D::U8(buff) => buff.read().into(),
+        }
+    }
+}
+
+impl From<&DeviceBuffer> for NumberVector {
+    fn from(d: &DeviceBuffer) -> NumberVector {
+        use DeviceBuffer as D;
+        match d {
+            D::U8(buff) => buff.read().into(),
         }
     }
 }
@@ -98,25 +151,28 @@ impl KernelArg for DeviceBuffer {
 //                 device_mem: ,
 //             }
 //     }
-// } 
+// }
 
 impl DeviceBuffer {
     fn new(
         session: Session,
         dims: Dims,
         number_vector: NumberVector,
-        mem_flags: MemFlags,
+        buffer_access: BufferAccess,
     ) -> DeviceBuffer {
         use DeviceBuffer as B;
         use NumberVector as NV;
         match number_vector {
+            NV::U8(data) => {
+                let buffer = BufferWrapper::new(session, dims, data, buffer_access).unwrap();
+                B::U8(buffer)
+            },
             // Fix me unwrap vs result
-            NV::U8(data) => B::U8(BufferWrapper::new(session, dims, &data[..], mem_flags).unwrap()),
+            // NV::U8 => B::U8(),
             _ => panic!("NOOOOOOOPE"),
         }
     }
 }
-
 
 #[derive(NifStruct)]
 #[must_use]
@@ -131,7 +187,6 @@ impl fmt::Debug for DeviceBufferEx {
     }
 }
 
-
 impl NativeWrapper<DeviceBuffer> for DeviceBufferEx {
     fn native(&self) -> &DeviceBuffer {
         &self.__native__
@@ -144,8 +199,12 @@ impl DeviceBufferEx {
             __native__: ResourceArc::new(device_buffer),
         }
     }
-}
 
+    pub fn to_array(&self) -> ArrayEx {
+        let number_vector: NumberVector = self.native().into();
+        ArrayEx::from_number_vector(number_vector)
+    }
+}
 
 impl KernelArg for DeviceBufferEx {
     unsafe fn as_kernel_arg(&self) -> KernelArgSizeAndPointer {
@@ -171,13 +230,23 @@ impl From<BufferAccess> for MemFlags {
 }
 
 #[rustler::nif]
-fn buffer_new(
+pub fn buffer_build_from_array(
     session: SessionEx,
     dims: DimsEx,
-    number_vector: NumberVector,
+    number_type: NumberType,
+    array: ArrayEx,
     access: BufferAccess,
 ) -> DeviceBufferEx {
-    let buf = DeviceBuffer::new(session.into(), dims.into(), number_vector, access.into());
+    let buf = DeviceBuffer::new(
+        session.into(),
+        dims.into(),
+        array.cast_to_number_vector(number_type),
+        access.into(),
+    );
     DeviceBufferEx::new(buf)
 }
 
+#[rustler::nif]
+pub fn buffer_to_array(buffer: DeviceBufferEx) -> ArrayEx {
+    buffer.to_array()
+}

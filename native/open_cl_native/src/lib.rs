@@ -19,12 +19,11 @@ mod traits;
 mod ex;
 
 use ex::array_ex;
+use ex::device_buffer_ex;
 use ex::device_ex;
+use ex::kernel_ex;
 use ex::platform_ex;
 use ex::session_ex;
-// use ex::tensor_ex;
-
-// use ex::command_queue_ex;
 
 rustler::init! {
     "Elixir.OpenCL.Native",
@@ -179,18 +178,12 @@ rustler::init! {
         array_ex::array_number_type,
         array_ex::array_cast,
 
+        // DEVICE_BUFFER
+        device_buffer_ex::buffer_build_from_array,
+        device_buffer_ex::buffer_to_array,
 
-        // TENSOR
-        // tensor_ex::tensor_new,
-        // tensor_ex::tensor_self_dims,
-        // tensor_ex::tensor_self_extend_tensor,
-        // tensor_ex::tensor_self_extend_vec,
-        // tensor_ex::tensor_from_array,
-        // tensor_ex::tensor_from_number_vector,
-        // tensor_ex::tensor_self_dims,
-        // tensor_ex::tensor_self_number_vector,
-        // tensor_ex::tensor_self_number_type,
-        // tensor_ex::tensor_self_cast_to_number_type,
+        // KERNEL
+        kernel_ex::kernel_execute_sync,
 
     ],
     load = load

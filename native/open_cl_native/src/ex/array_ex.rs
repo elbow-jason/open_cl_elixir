@@ -53,6 +53,10 @@ impl Array {
     fn into_resource_arc(self) -> ResourceArc<Self> {
         ResourceArc::new(self)
     }
+
+    pub fn cast_to_number_vector(&self, number_type: NumberType) -> NumberVector {
+        self.data.read().unwrap().cast_number(number_type)
+    }
 }
 
 #[derive(NifStruct)]
@@ -126,6 +130,10 @@ impl ArrayEx {
 
     pub fn is_same_array(&self, other: &ArrayEx) -> bool {
         std::ptr::eq(self.__native__.deref(), other.__native__.deref())
+    }
+
+    pub fn cast_to_number_vector(&self, number_type: NumberType) -> NumberVector {
+        self.native().cast_to_number_vector(number_type)
     }
 }
 

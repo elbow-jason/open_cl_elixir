@@ -15,6 +15,7 @@ defmodule OpenCL.MixProject do
         ]
       ],
       elixirc_paths: elixirc_paths(Mix.env()),
+      aliases: aliases(Mix.env())
     ]
   end
 
@@ -34,12 +35,21 @@ defmodule OpenCL.MixProject do
     ]
   end
 
-  # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:rustler, "~> 0.21.0"}
-      # {:dep_from_hexpm, "~> 0.3.0"},
-      # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
+      {:rustler, "~> 0.21.0"},
+      {:flow, "~> 0.15.0", only: [:test]},
+    ]
+  end
+
+  @native_manifest_flag "--manifest-path native/open_cl_native/Cargo.toml"
+
+  defp aliases(_) do
+    [
+      test: ["test.native", "test"],
+      format: ["format.native", "format"],
+      "test.native": ["cmd cargo test #{@native_manifest_flag} -- --nocapture"],
+      "format.native": ["cmd cargo fmt #{@native_manifest_flag}"]
     ]
   end
 end
