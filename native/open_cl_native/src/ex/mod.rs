@@ -1,14 +1,14 @@
 use opencl_core::{Device, Platform, Session};
 
 pub mod array_ex;
+pub mod device_buffer_ex;
 pub mod device_ex;
+pub mod dims_ex;
 pub mod error_ex;
+pub mod kernel_ex;
 pub mod number_ex;
 pub mod platform_ex;
 pub mod session_ex;
-pub mod device_buffer_ex;
-pub mod dims_ex;
-pub mod kernel_ex;
 pub mod wrapper_ex;
 
 pub use array_ex::{Array, ArrayEx};

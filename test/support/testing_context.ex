@@ -5,6 +5,9 @@ defmodule OpenCL.Testing do
 
   alias OpenCL.Session
   alias OpenCL.DeviceBuffer
+  alias OpenCL.Array
+  alias OpenCL.Device
+  alias OpenCL.Platform
 
   defmodule NativeKernel do
     defstruct name: nil,
@@ -15,7 +18,7 @@ defmodule OpenCL.Testing do
       %NativeKernel{
         name: name,
         src: src,
-        type: type,
+        type: type
       }
     end
 
@@ -30,15 +33,14 @@ defmodule OpenCL.Testing do
     require Logger
 
     defstruct kernel: nil,
-      initial_value: 0,
-      shape: {3, 3},
-      iterations: 100,
-      started_at: nil,
-      stopped_at: nil,
-      expected: nil,
-      session: nil,
-      concurrency: 1
-
+              initial_value: 0,
+              shape: {3, 3},
+              iterations: 100,
+              started_at: nil,
+              stopped_at: nil,
+              expected: nil,
+              session: nil,
+              concurrency: 1
 
     @src_add_one_u8 """
     __kernel void add_one_u8(__global uchar *nums) {
@@ -86,6 +88,7 @@ defmodule OpenCL.Testing do
         tc
         |> session()
         |> Session.device_name()
+
       name
     end
 
@@ -127,7 +130,7 @@ defmodule OpenCL.Testing do
         %Context{kernel: "add_one_u8", shape: {10_000, 10_000}, iterations: 10},
         %Context{kernel: "add_one_u8", shape: 100_000, iterations: 1, expected: 1},
         %Context{kernel: "add_one_u8", shape: 100, iterations: 1, expected: 1},
-        %Context{kernel: "add_one_u8", shape: 120, iterations: 1, expected: 1},
+        %Context{kernel: "add_one_u8", shape: 120, iterations: 1, expected: 1}
       ]
     end
 
@@ -135,6 +138,7 @@ defmodule OpenCL.Testing do
 
     def all_devices do
       assert {:ok, platforms} = Platform.list_all()
+
       Enum.flat_map(platforms, fn p ->
         assert {:ok, devices} = Platform.all_devices(p)
         Enum.filter(devices, &Device.usable?/1)
@@ -148,16 +152,21 @@ defmodule OpenCL.Testing do
       contexts = Map.get(cfg, :contexts) || all_contexts()
       kernels = Map.get(cfg, :kernels) || all_kernels()
       devices = Map.get(cfg, :devices) || all_devices()
+
       for kernel_cfg <- kernels do
         for ctx <- contexts do
           for device <- devices do
-            %NativeKernel{} = kernel = resolve_kernel(ctx.kernel) || resolve_kernel(kernel_cfg) || raise "NativeKernel not found"
+            %NativeKernel{} =
+              kernel =
+              resolve_kernel(ctx.kernel) || resolve_kernel(kernel_cfg) ||
+                raise "NativeKernel not found"
+
             assert {:ok, session} = Session.create_with_src(device, kernel.src)
 
             %Context{
-              ctx |
-              kernel: kernel,
-              session: session,
+              ctx
+              | kernel: kernel,
+                session: session
             }
           end
         end
@@ -181,14 +190,14 @@ defmodule OpenCL.Testing do
     end
 
     def build_device_buffer(%Context{} = tc) do
-
-      assert %DeviceBuffer{} = DeviceBuffer.build(
-        session(tc),
-        shape(tc),
-        type(tc),
-        build_array(tc),
-        :read_write
-      )
+      assert %DeviceBuffer{} =
+               DeviceBuffer.build(
+                 session(tc),
+                 shape(tc),
+                 type(tc),
+                 build_array(tc),
+                 :read_write
+               )
     end
 
     defp render_report(tc) do
@@ -209,21 +218,23 @@ defmodule OpenCL.Testing do
     defp concurrency(%Context{}), do: 1
 
     defp run_once(tc, buffer) do
-      assert :ok = Session.kernel_execute_sync(
-          session(tc),
-          kernel_name(tc),
-          shape(tc),
-          [buffer]
-        )
+      assert :ok =
+               Session.kernel_execute_sync(
+                 session(tc),
+                 kernel_name(tc),
+                 shape(tc),
+                 [buffer]
+               )
     end
 
     def run(tc, buffer) do
-
       tc = start(tc)
+
       1..iterations(tc)
       |> Enum.each(fn _ ->
         run_once(tc, buffer)
       end)
+
       stop(tc)
     end
 
@@ -239,6 +250,7 @@ defmodule OpenCL.Testing do
 
       assert length(list) == n_items(tc)
       expected_value = expected(tc)
+
       if expected_value do
         Enum.each(list, fn num ->
           assert num === expected_value, """
@@ -249,6 +261,7 @@ defmodule OpenCL.Testing do
           """
         end)
       end
+
       report(tc)
     end
   end

@@ -34,7 +34,10 @@ defmodule OpenCLTest do
     for session <- sessions do
       count = 500_000
       assert %Array{} = array = Array.filled_with(:u8, 0, count)
-      assert %DeviceBuffer{} = buffer = DeviceBuffer.build(session, count, :u8, array, :read_write)
+
+      assert %DeviceBuffer{} =
+               buffer = DeviceBuffer.build(session, count, :u8, array, :read_write)
+
       kernel_name = "add_one_u8"
       work_dims = 500_000
       start_time = now_in_microsec()
@@ -45,9 +48,11 @@ defmodule OpenCLTest do
       Logger.debug("#{inspect(session)} - 500k u8 add_one took #{took_microsec}usec")
       assert %Array{} = array = DeviceBuffer.to_array(buffer)
       ones = Array.to_list(array)
+
       Enum.each(ones, fn one ->
         assert one == 1
       end)
+
       assert length(ones) == 500_000
     end
   end
@@ -56,21 +61,34 @@ defmodule OpenCLTest do
     for session <- sessions do
       count = 500_000
       assert %Array{} = array = Array.filled_with(:u8, 0, count)
-      assert %DeviceBuffer{} = buffer = DeviceBuffer.build(session, count, :u8, array, :read_write)
+
+      assert %DeviceBuffer{} =
+               buffer = DeviceBuffer.build(session, count, :u8, array, :read_write)
+
       kernel_name = "add_one_u8"
       work_dims = 500_000
       start_time = now_in_microsec()
+
       Enum.each(1..200, fn _ ->
         :ok = Session.kernel_execute_sync(session, kernel_name, work_dims, [buffer])
       end)
+
       stop_time = now_in_microsec()
       took_microsec = stop_time - start_time
-      Logger.debug("#{inspect(session)} - 500k u8 add_one x200 took #{took_microsec}usec (#{trunc(Float.round(took_microsec / 200))} per call) (#{Float.round(1_000_000 / (took_microsec / 200))} calls per sec)")
+
+      Logger.debug(
+        "#{inspect(session)} - 500k u8 add_one x200 took #{took_microsec}usec (#{
+          trunc(Float.round(took_microsec / 200))
+        } per call) (#{Float.round(1_000_000 / (took_microsec / 200))} calls per sec)"
+      )
+
       %Array{} = array2 = DeviceBuffer.to_array(buffer)
       nums = Array.to_list(array2)
+
       Enum.each(nums, fn num ->
         assert num == 200
       end)
+
       assert length(nums) == 500_000
     end
   end
@@ -79,16 +97,27 @@ defmodule OpenCLTest do
     for session <- sessions do
       count = 3 * 3
       assert %Array{} = array = Array.filled_with(:u8, 0, count)
-      assert %DeviceBuffer{} = buffer = DeviceBuffer.build(session, count, :u8, array, :read_write)
+
+      assert %DeviceBuffer{} =
+               buffer = DeviceBuffer.build(session, count, :u8, array, :read_write)
+
       kernel_name = "add_one_u8"
       work_dims = {3, 3}
       start_time = now_in_microsec()
+
       Enum.each(1..200, fn _ ->
         :ok = Session.kernel_execute_sync(session, kernel_name, work_dims, [buffer])
       end)
+
       stop_time = now_in_microsec()
       took_microsec = stop_time - start_time
-      Logger.debug("#{inspect(session)} - 3x3 u8 add_one x200 took #{took_microsec}usec (#{trunc(Float.round(took_microsec / 200))} per call) (#{Float.round(1_000_000 / (took_microsec / 200))} calls per sec)")
+
+      Logger.debug(
+        "#{inspect(session)} - 3x3 u8 add_one x200 took #{took_microsec}usec (#{
+          trunc(Float.round(took_microsec / 200))
+        } per call) (#{Float.round(1_000_000 / (took_microsec / 200))} calls per sec)"
+      )
+
       %Array{} = array2 = DeviceBuffer.to_array(buffer)
       nums = Array.to_list(array2)
       assert nums == [200, 200, 200, 0, 0, 0, 0, 0, 0]
@@ -122,13 +151,22 @@ defmodule OpenCLTest do
 
       stop_time = now_in_microsec()
       took_microsec = stop_time - start_time
-      Logger.debug("#{inspect(session)} - 500 u8 add_one x100p100 took #{took_microsec}usec (#{trunc(Float.round(took_microsec / 200))} per call) (#{Float.round(1_000_000 / (took_microsec / 200))} calls per sec)")
+
+      Logger.debug(
+        "#{inspect(session)} - 500 u8 add_one x100p100 took #{took_microsec}usec (#{
+          trunc(Float.round(took_microsec / 200))
+        } per call) (#{Float.round(1_000_000 / (took_microsec / 200))} calls per sec)"
+      )
+
       %Array{} = array2 = DeviceBuffer.to_array(buffer)
       nums = Array.to_list(array2)
+
       Enum.each(nums, fn num ->
         assert num == expected_value
       end)
+
       assert length(nums) == count
+      :erlang.garbage_collect()
     end
   end
 
@@ -141,19 +179,24 @@ defmodule OpenCLTest do
 
   def init_sessions(ctx) do
     assert {:ok, platforms} = Platform.list_all()
-    assert [_ | _] = devices = Enum.flat_map(platforms, fn p ->
-      assert {:ok, devices} = Platform.all_devices(p)
-      Enum.filter(devices, &Device.usable?/1)
-    end)
+
+    assert [_ | _] =
+             devices =
+             Enum.flat_map(platforms, fn p ->
+               assert {:ok, devices} = Platform.all_devices(p)
+               Enum.filter(devices, &Device.usable?/1)
+             end)
 
     Logger.debug("Running tests with #{inspect(devices, pretty: true)}")
 
     src = Map.get(ctx, :src, @src_add_one_u8)
 
-    assert [_ | _] = sessions = Enum.map(devices, fn d ->
-      assert {:ok, session} = Session.create_with_src(d, src)
-      session
-    end)
+    assert [_ | _] =
+             sessions =
+             Enum.map(devices, fn d ->
+               assert {:ok, session} = Session.create_with_src(d, src)
+               session
+             end)
 
     {:ok, sessions: sessions}
   end

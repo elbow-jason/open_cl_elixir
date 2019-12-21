@@ -1,4 +1,4 @@
-use opencl_core::{Kernel, KernelArg, KernelArgSizeAndPointer, Work, Dims};
+use opencl_core::{Dims, Kernel, KernelArg, KernelArgSizeAndPointer, Work};
 
 use crate::ex::{DeviceBufferEx, DimsEx, NumEx, SessionEx};
 
@@ -36,7 +36,7 @@ pub fn kernel_execute_sync(
     let kernel = Kernel::create(session.program(), name).unwrap();
     for (i, arg) in args.iter().enumerate() {
         kernel.set_arg(i, arg).unwrap();
-    };
+    }
     let work_dims: Dims = dims.into();
     let work = Work::new(work_dims);
     // let vol = work.global_work_size();

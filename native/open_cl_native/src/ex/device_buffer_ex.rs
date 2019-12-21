@@ -6,15 +6,15 @@ use std::fmt::Debug;
 use rustler::resource::ResourceArc;
 use rustler::{Encoder, NifStruct, NifUnitEnum};
 
-use crate::ex::number_ex::{NumberType, NumberTyped, NumberVector, Number};
-use crate::ex::array_ex::{ArrayEx};
+use crate::ex::array_ex::ArrayEx;
+use crate::ex::number_ex::{Number, NumberType, NumberTyped, NumberVector};
 use crate::ex::session_ex::SessionEx;
 use crate::ex::DimsEx;
 use crate::ex::ErrorEx;
 use crate::traits::NativeWrapper;
 use opencl_core::device_mem::flags::MemFlags;
+use opencl_core::utils::vec_filled_with;
 use opencl_core::{DeviceMem, Dims, KernelArg, KernelArgSizeAndPointer, Session};
-use opencl_core::utils::{vec_filled_with};
 // impl WrapperExResource for DeviceBuffer {}
 
 #[derive(Debug)]
@@ -38,11 +38,20 @@ where
         dims: Dims,
         data: Vec<T>,
         buffer_access: BufferAccess,
-    ) -> Result<BufferWrapper<T>, ErrorEx> where T: Debug {
+    ) -> Result<BufferWrapper<T>, ErrorEx>
+    where
+        T: Debug,
+    {
         let device_mem = match buffer_access {
-            BufferAccess::ReadOnly => DeviceMem::create_read_only_from(session.context(), &data[..]),
-            BufferAccess::WriteOnly => DeviceMem::create_write_only_from(session.context(), &data[..]),
-            BufferAccess::ReadWrite => DeviceMem::create_read_write_from(session.context(), &data[..]),
+            BufferAccess::ReadOnly => {
+                DeviceMem::create_read_only_from(session.context(), &data[..])
+            }
+            BufferAccess::WriteOnly => {
+                DeviceMem::create_write_only_from(session.context(), &data[..])
+            }
+            BufferAccess::ReadWrite => {
+                DeviceMem::create_read_write_from(session.context(), &data[..])
+            }
         }?;
 
         Ok(BufferWrapper {
@@ -90,7 +99,6 @@ pub enum DeviceBuffer {
     // Isize(DeviceMemBuffer<isize>),
 }
 
-
 impl NumberTyped for DeviceBuffer {
     fn number_type(&self) -> NumberType {
         use DeviceBuffer as D;
@@ -112,7 +120,7 @@ impl NumberTyped for DeviceBuffer {
     }
 }
 
-// impl 
+// impl
 // BufferWrapper::new::<u8>(session, dims, data, mem_flags).unwrap()
 
 impl KernelArg for DeviceBuffer {
@@ -142,17 +150,6 @@ impl From<&DeviceBuffer> for NumberVector {
     }
 }
 
-// macro_rules! create_device_buffer {
-//     ($variant:ident, $t:ty, $session:ident, $dims:ident, $mem_flags:ident, $data:ident) => {
-//         DeviceBuffer::$variant{
-//                 session: $session.clone(),
-//                 mem_flags: $mem_flags,
-//                 dims: $dims.into(),
-//                 device_mem: ,
-//             }
-//     }
-// }
-
 impl DeviceBuffer {
     fn new(
         session: Session,
@@ -166,7 +163,7 @@ impl DeviceBuffer {
             NV::U8(data) => {
                 let buffer = BufferWrapper::new(session, dims, data, buffer_access).unwrap();
                 B::U8(buffer)
-            },
+            }
             // Fix me unwrap vs result
             // NV::U8 => B::U8(),
             _ => panic!("NOOOOOOOPE"),

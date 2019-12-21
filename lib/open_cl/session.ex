@@ -61,7 +61,6 @@ defmodule OpenCL.Session do
   method(:device_profiling_timer_resolution)
   method(:device_max_work_item_sizes)
 
-
   def kernel_execute_sync(session, name, dims, args) when is_list(args) do
     Native.kernel_execute_sync(session, name, dims, args)
   end
