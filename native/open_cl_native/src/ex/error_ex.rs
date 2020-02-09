@@ -4,6 +4,9 @@ use rustler::{Encoder, Env, Term};
 
 use crate::atoms;
 
+use crate::ex::buffer_ex::BufferError;
+use crate::number::NumberTypeError;
+
 pub type OutputEx<T> = Result<T, ErrorEx>;
 
 /// An error for the OpenCL to Elixir interface.
@@ -11,29 +14,49 @@ pub type OutputEx<T> = Result<T, ErrorEx>;
 pub enum ErrorEx {
     #[fail(display = "{:?}", _0)]
     OpenCLError(OpenCLError),
-}
 
-impl From<OpenCLError> for ErrorEx {
-    fn from(err: OpenCLError) -> ErrorEx {
-        ErrorEx::OpenCLError(err)
-    }
+    #[fail(display = "{:?}", _0)]
+    BufferError(BufferError),
+
+    #[fail(display = "{:?}", _0)]
+    NumberTypeError(NumberTypeError),
 }
 
 impl From<ErrorEx> for RustlerError {
     fn from(e: ErrorEx) -> RustlerError {
-        RustlerError::RaiseTerm(Box::new(e))
+        RustlerError::Term(Box::new(e))
     }
 }
+
+macro_rules! impl_error_ex_conv {
+    ($err:ident) => {
+        impl From<$err> for ErrorEx {
+            fn from(err: $err) -> ErrorEx {
+                ErrorEx::$err(err)
+            }
+        }
+    }
+}
+
+impl_error_ex_conv!(OpenCLError);
+impl_error_ex_conv!(BufferError);
+impl_error_ex_conv!(NumberTypeError);
 
 impl Encoder for ErrorEx {
     fn encode<'a>(&self, env: Env<'a>) -> Term<'a> {
         match self {
-            ErrorEx::OpenCLError(OpenCLError::StatusCode(code, err)) => {
+            ErrorEx::NumberTypeError(err) => {
                 let message = format!("{:?}", err);
-                (atoms::status_code_error(), code, message).encode(env)
+                (atoms::error(), message).encode(env)
             }
+
+            ErrorEx::BufferError(err) => {
+                let message = format!("{:?}", err);
+                (atoms::error(), message).encode(env)
+            }
+
             ErrorEx::OpenCLError(err) => {
-                let message = format!("OpenCL Error {:?}", err);
+                let message = format!("{:?}", err);
                 (atoms::error(), message).encode(env)
             }
         }

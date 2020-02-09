@@ -2,8 +2,6 @@ defmodule OpenCL.Device do
   use OpenCL.NativeStruct
   alias OpenCL.Device
 
-  func_0(:default)
-
   @spec usable?(t()) :: boolean
   defdelegate usable?(device), to: Native, as: :device_self_is_usable
 
@@ -76,8 +74,7 @@ defmodule OpenCL.Device do
     def inspect(device, _) do
       if Device.usable?(device) do
         {:ok, name} = Device.name(device)
-        {:ok, version} = Device.version(device)
-        "#OpenCL.Device<[name: #{name}, version: #{version}]>"
+        "#OpenCL.Device<[#{name}]>"
       else
         "#OpenCL.Device<[device is unusable]>"
       end

@@ -1,4 +1,4 @@
-use opencl_core::Dims;
+use opencl_core::ll::Dims;
 use rustler::{NifTuple, NifUntaggedEnum};
 
 pub trait Dimension {

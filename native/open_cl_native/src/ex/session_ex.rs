@@ -1,6 +1,8 @@
 use std::fmt;
 
-use opencl_core::{CommandQueue, Program, Session};
+use opencl_core::{ClNumber, Device, MemConfig, Session};
+// use opencl_core::ll::Session as ClSession;
+// use opencl_core::ll::{DevicePtr};
 use rustler::resource::ResourceArc;
 use rustler::{Encoder, NifStruct};
 
@@ -8,7 +10,10 @@ use super::{OutputEx, WrapperEx, WrapperExResource};
 
 use crate::traits::NativeWrapper;
 
-use crate::device_ex::DeviceEx;
+use crate::{
+    BufferCreatorEx, BufferEx, DeviceEx, MemConfigEx, NumberType, NumberTyped, NumberTypedT,
+    NumberListEx, NumberEx, ArrayEx,
+};
 
 impl WrapperExResource for Session {}
 
@@ -18,7 +23,6 @@ impl WrapperExResource for Session {}
 #[repr(C)]
 pub struct SessionEx {
     __native__: ResourceArc<WrapperEx<Session>>,
-    src: String,
     _unconstructable: (),
 }
 
@@ -35,21 +39,30 @@ impl NativeWrapper<Session> for SessionEx {
 }
 
 impl SessionEx {
-    pub fn new(session: Session, src: String) -> SessionEx {
+    pub fn new(session: Session) -> SessionEx {
         SessionEx {
             __native__: session.into_resource_arc(),
-            src,
             _unconstructable: (),
         }
     }
 
-    pub fn create(device: &DeviceEx, src: String) -> OutputEx<SessionEx> {
-        let native_session: Session = Session::create(device.native().clone(), &src[..])?;
-        Ok(SessionEx::new(native_session, src))
+    pub fn create(src: &str) -> OutputEx<SessionEx> {
+        let hl_session: Session = Session::create(src)?;
+        Ok(SessionEx::new(hl_session))
     }
 
-    pub fn clone_device_ex(&self) -> DeviceEx {
-        DeviceEx::new(self.native().device().clone())
+    pub fn create_with_devices(src: &str, devices: &[DeviceEx]) -> OutputEx<SessionEx> {
+        let hl_devices: Vec<Device> = devices.iter().map(|d| d.native().clone()).collect();
+        let hl_session: Session = Session::create_with_devices(hl_devices, src)?;
+        Ok(SessionEx::new(hl_session))
+    }
+
+    pub fn devices(&self) -> Vec<DeviceEx> {
+        self.native()
+            .devices()
+            .iter()
+            .map(|d| DeviceEx::new(d.clone()))
+            .collect()
     }
 
     pub fn clone_native(&self) -> Session {
@@ -60,13 +73,9 @@ impl SessionEx {
         &self.__native__.item
     }
 
-    pub fn program(&self) -> &Program {
-        self.native().program()
-    }
+    // pub fn execute_kernel(&self, name: &str, dims: DimsEx, ) -> OutputEx<()> {
 
-    pub fn command_queue(&self) -> &CommandQueue {
-        self.native().command_queue()
-    }
+    // }
 }
 
 impl From<SessionEx> for Session {
@@ -76,86 +85,228 @@ impl From<SessionEx> for Session {
 }
 
 #[rustler::nif]
-fn session_create_with_src(device: DeviceEx, src: String) -> OutputEx<SessionEx> {
-    SessionEx::create(&device, src)
+fn session_create(src: String) -> OutputEx<SessionEx> {
+    SessionEx::create(&src[..])
 }
 
 #[rustler::nif]
-fn session_self_device(session: SessionEx) -> DeviceEx {
-    session.clone_device_ex()
+fn session_create_with_devices(src: String, devices: Vec<DeviceEx>) -> OutputEx<SessionEx> {
+    SessionEx::create_with_devices(&src[..], &devices[..])
 }
 
-#[macro_export]
-macro_rules! impl_session_method_and_nif {
-    ($field:ident, $func_name:ident, $ret:ty) => {
-        paste::item! {
-            impl SessionEx {
-                pub fn [<$field _ $func_name>](&self) -> OutputEx<$ret> {
-                    self.native()
-                    .$field()
-                    .$func_name()
-                    .map_err(|e| e.into())
-                }
-            }
+#[rustler::nif]
+fn session_self_devices(session: SessionEx) -> Vec<DeviceEx> {
+    session.devices()
+}
 
-            #[rustler::nif]
-            pub fn [<session_self_ $field _ $func_name>](item: SessionEx) -> OutputEx<$ret> {
-                item.[<$field _ $func_name>]()
-            }
+// #[rustler::nif]
+// fn session_self_read_buffer(session: SessionEx, buffer: BufferEx, config: MemConfigEx) -> ArrayEx {
+//     // let native_session = session.native().sync_read_buffer()
+//     //  pub fn sync_read_buffer<'a, T: ClNumber, H: Into<MutVecOrSlice<'a, T>>>(
+//     //     &mut self,
+//     //     queue_index: usize,
+//     //     buffer: &Buffer<T>,
+//     //     host_buffer: H,
+//     //     opts: Option<CommandQueueOptions>,
+//     // ) -> Output<Option<Vec<T>>> {
+// }
+
+#[rustler::nif]
+pub fn session_self_create_buffer(
+    session: SessionEx,
+    number_type: NumberType,
+    creator_ex: BufferCreatorEx,
+    config: MemConfigEx,
+) -> OutputEx<BufferEx> {
+    creator_ex.check_matches_type(number_type)?;
+
+    let mem_config = build_mem_config(config, &creator_ex);
+    match creator_ex {
+        BufferCreatorEx::List(list) => {
+            create_buffer_from_list(&session, list, mem_config)
         }
-    };
+        BufferCreatorEx::Array(arr) => {
+            create_buffer_from_array(&session, arr, mem_config)
+        }
+        BufferCreatorEx::Length(len) => {
+            create_buffer_from_len(&session, number_type, len, mem_config)
+        }
+    }
 }
 
-impl_session_method_and_nif!(device, name, String);
-impl_session_method_and_nif!(device, opencl_c_version, String);
-impl_session_method_and_nif!(device, profile, String);
-impl_session_method_and_nif!(device, vendor, String);
-impl_session_method_and_nif!(device, version, String);
-impl_session_method_and_nif!(device, driver_version, String);
-impl_session_method_and_nif!(device, address_bits, u32);
-impl_session_method_and_nif!(device, global_mem_cacheline_size, u32);
-impl_session_method_and_nif!(device, max_clock_frequency, u32);
-impl_session_method_and_nif!(device, max_compute_units, u32);
-impl_session_method_and_nif!(device, max_constant_args, u32);
-impl_session_method_and_nif!(device, max_read_image_args, u32);
-impl_session_method_and_nif!(device, max_samplers, u32);
-impl_session_method_and_nif!(device, max_work_item_dimensions, u32);
-impl_session_method_and_nif!(device, max_write_image_args, u32);
-impl_session_method_and_nif!(device, mem_base_addr_align, u32);
-impl_session_method_and_nif!(device, min_data_type_align_size, u32);
-impl_session_method_and_nif!(device, native_vector_width_char, u32);
-impl_session_method_and_nif!(device, native_vector_width_short, u32);
-impl_session_method_and_nif!(device, native_vector_width_int, u32);
-impl_session_method_and_nif!(device, native_vector_width_long, u32);
-impl_session_method_and_nif!(device, native_vector_width_float, u32);
-impl_session_method_and_nif!(device, native_vector_width_double, u32);
-impl_session_method_and_nif!(device, native_vector_width_half, u32);
-impl_session_method_and_nif!(device, partition_max_sub_devices, u32);
-impl_session_method_and_nif!(device, preferred_vector_width_char, u32);
-impl_session_method_and_nif!(device, preferred_vector_width_short, u32);
-impl_session_method_and_nif!(device, preferred_vector_width_int, u32);
-impl_session_method_and_nif!(device, preferred_vector_width_long, u32);
-impl_session_method_and_nif!(device, preferred_vector_width_float, u32);
-impl_session_method_and_nif!(device, preferred_vector_width_double, u32);
-impl_session_method_and_nif!(device, preferred_vector_width_half, u32);
-impl_session_method_and_nif!(device, vendor_id, u32);
-impl_session_method_and_nif!(device, available, bool);
-impl_session_method_and_nif!(device, compiler_available, bool);
-impl_session_method_and_nif!(device, endian_little, bool);
-impl_session_method_and_nif!(device, error_correction_support, bool);
-impl_session_method_and_nif!(device, host_unified_memory, bool);
-impl_session_method_and_nif!(device, image_support, bool);
-impl_session_method_and_nif!(device, linker_available, bool);
-impl_session_method_and_nif!(device, preferred_interop_user_sync, bool);
-impl_session_method_and_nif!(device, image2d_max_width, usize);
-impl_session_method_and_nif!(device, image2d_max_height, usize);
-impl_session_method_and_nif!(device, image3d_max_width, usize);
-impl_session_method_and_nif!(device, image3d_max_height, usize);
-impl_session_method_and_nif!(device, image3d_max_depth, usize);
-impl_session_method_and_nif!(device, image_max_buffer_size, usize);
-impl_session_method_and_nif!(device, image_max_array_size, usize);
-impl_session_method_and_nif!(device, max_parameter_size, usize);
-impl_session_method_and_nif!(device, max_work_group_size, usize);
-impl_session_method_and_nif!(device, printf_buffer_size, usize);
-impl_session_method_and_nif!(device, profiling_timer_resolution, usize);
-impl_session_method_and_nif!(device, max_work_item_sizes, Vec<usize>);
+fn build_mem_config(config: MemConfigEx, creator_ex: &BufferCreatorEx) -> MemConfig {
+    config
+        .into_builder()
+        .with_mem_location_of_buffer_creator(&creator_ex)
+        .build()
+}
+
+fn create_buffer_from_len(
+    sess: &SessionEx,
+    nt: NumberType,
+    len: usize,
+    mem_config: MemConfig,
+) -> OutputEx<BufferEx> {
+    use NumberType as NT;
+    match nt.number_type() {
+        NT::U8 => _create_buffer_from_len::<u8>(sess, len, mem_config),
+        NT::I8 => _create_buffer_from_len::<i8>(sess, len, mem_config),
+        NT::U16 => _create_buffer_from_len::<u16>(sess, len, mem_config),
+        NT::I16 => _create_buffer_from_len::<i16>(sess, len, mem_config),
+        NT::U32 => _create_buffer_from_len::<u32>(sess, len, mem_config),
+        NT::I32 => _create_buffer_from_len::<i32>(sess, len, mem_config),
+        NT::F32 => _create_buffer_from_len::<f32>(sess, len, mem_config),
+        NT::U64 => _create_buffer_from_len::<u64>(sess, len, mem_config),
+        NT::I64 => _create_buffer_from_len::<i64>(sess, len, mem_config),
+        NT::F64 => _create_buffer_from_len::<f64>(sess, len, mem_config),
+        NT::Usize => _create_buffer_from_len::<usize>(sess, len, mem_config),
+        NT::Isize => _create_buffer_from_len::<isize>(sess, len, mem_config),
+    }
+}
+
+#[inline]
+fn _create_buffer_from_len<T: ClNumber + NumberTypedT>(
+    sess: &SessionEx,
+    len: usize,
+    mem_config: MemConfig,
+) -> OutputEx<BufferEx> {
+    let core_buffer = unsafe {
+        sess.native()
+            .create_buffer_with_config::<T, usize>(len, mem_config)
+    }?;
+    Ok(BufferEx::from_core_buffer(core_buffer))
+}
+
+fn _buffer_from_slice<T: NumberEx>(sess: &SessionEx, data: &[T], mem_config: MemConfig) -> OutputEx<BufferEx> {
+    unsafe { 
+        sess.native()
+            .create_buffer_with_config::<T, &[T]>(data, mem_config)
+            .map(|b| BufferEx::from_core_buffer(b))
+            .map_err(From::from)
+    }
+}
+
+fn create_buffer_from_list(
+    sess: &SessionEx,
+    list: NumberListEx,
+    mem_config: MemConfig,
+) -> OutputEx<BufferEx> {
+    use NumberListEx as L;
+    match list {
+        L::U8(v) => _buffer_from_slice(sess, &v[..], mem_config),
+        L::I8(v) => _buffer_from_slice(sess, &v[..], mem_config),
+        L::U16(v) => _buffer_from_slice(sess, &v[..], mem_config),
+        L::I16(v) => _buffer_from_slice(sess, &v[..], mem_config),
+        L::U32(v) => _buffer_from_slice(sess, &v[..], mem_config),
+        L::I32(v) => _buffer_from_slice(sess, &v[..], mem_config),
+        L::F32(v) => _buffer_from_slice(sess, &v[..], mem_config),
+        L::U64(v) => _buffer_from_slice(sess, &v[..], mem_config),
+        L::I64(v) => _buffer_from_slice(sess, &v[..], mem_config),
+        L::F64(v) => _buffer_from_slice(sess, &v[..], mem_config),
+        L::Usize(v) => _buffer_from_slice(sess, &v[..], mem_config),
+        L::Isize(v) => _buffer_from_slice(sess, &v[..], mem_config),
+    }
+}
+
+fn create_buffer_from_array(
+    sess: &SessionEx,
+    array: ArrayEx,
+    mem_config: MemConfig,
+) -> OutputEx<BufferEx> {
+    use NumberType as NT;
+    let rt_list = array.read_lock();
+    match rt_list.number_type() {
+        NT::U8 => _buffer_from_slice(sess, rt_list.force_as_slice::<u8>(), mem_config),
+        NT::I8 => _buffer_from_slice(sess, rt_list.force_as_slice::<i8>(), mem_config),
+        NT::U16 => _buffer_from_slice(sess, rt_list.force_as_slice::<u16>(), mem_config),
+        NT::I16 => _buffer_from_slice(sess, rt_list.force_as_slice::<i16>(), mem_config),
+        NT::U32 => _buffer_from_slice(sess, rt_list.force_as_slice::<u32>(), mem_config),
+        NT::I32 => _buffer_from_slice(sess, rt_list.force_as_slice::<i32>(), mem_config),
+        NT::F32 => _buffer_from_slice(sess, rt_list.force_as_slice::<f32>(), mem_config),
+        NT::U64 => _buffer_from_slice(sess, rt_list.force_as_slice::<u64>(), mem_config),
+        NT::I64 => _buffer_from_slice(sess, rt_list.force_as_slice::<i64>(), mem_config),
+        NT::F64 => _buffer_from_slice(sess, rt_list.force_as_slice::<f64>(), mem_config),
+        NT::Usize => _buffer_from_slice(sess, rt_list.force_as_slice::<usize>(), mem_config),
+        NT::Isize => _buffer_from_slice(sess, rt_list.force_as_slice::<isize>(), mem_config),
+    }
+}
+
+// #[rustler::nif]
+// fn session_self_execute(session: SessionEx, kernel_name: String) -> OutputEx<KernelEx> {
+
+// }
+
+// #[macro_export]
+// macro_rules! impl_session_low_level_method_and_nif {
+//     ($field:ident, $func_name:ident, $ret:ty) => {
+//         paste::item! {
+//             impl SessionEx {
+//                 pub fn [<$field _ $func_name>](&self) -> OutputEx<$ret> {
+//                     self.native()
+//                     .$field()
+//                     .$func_name()
+//                     .map_err(|e| e.into())
+//                 }
+//             }
+
+//             #[rustler::nif]
+//             pub fn [<session_self_ $field _ $func_name>](item: SessionEx) -> OutputEx<$ret> {
+//                 item.[<$field _ $func_name>]()
+//             }
+//         }
+//     };
+// }
+
+// // impl_session_low_level_method_and_nif!(device, name, String);
+// // impl_session_low_level_method_and_nif!(device, opencl_c_version, String);
+// // impl_session_low_level_method_and_nif!(device, profile, String);
+// // impl_session_low_level_method_and_nif!(device, vendor, String);
+// // impl_session_low_level_method_and_nif!(device, version, String);
+// // impl_session_low_level_method_and_nif!(device, driver_version, String);
+// // impl_session_low_level_method_and_nif!(device, address_bits, u32);
+// // impl_session_low_level_method_and_nif!(device, global_mem_cacheline_size, u32);
+// // impl_session_low_level_method_and_nif!(device, max_clock_frequency, u32);
+// // impl_session_low_level_method_and_nif!(device, max_compute_units, u32);
+// // impl_session_low_level_method_and_nif!(device, max_constant_args, u32);
+// // impl_session_low_level_method_and_nif!(device, max_read_image_args, u32);
+// // impl_session_low_level_method_and_nif!(device, max_samplers, u32);
+// // impl_session_low_level_method_and_nif!(device, max_work_item_dimensions, u32);
+// // impl_session_low_level_method_and_nif!(device, max_write_image_args, u32);
+// // impl_session_low_level_method_and_nif!(device, mem_base_addr_align, u32);
+// // impl_session_low_level_method_and_nif!(device, min_data_type_align_size, u32);
+// // impl_session_low_level_method_and_nif!(device, native_vector_width_char, u32);
+// // impl_session_low_level_method_and_nif!(device, native_vector_width_short, u32);
+// // impl_session_low_level_method_and_nif!(device, native_vector_width_int, u32);
+// // impl_session_low_level_method_and_nif!(device, native_vector_width_long, u32);
+// // impl_session_low_level_method_and_nif!(device, native_vector_width_float, u32);
+// // impl_session_low_level_method_and_nif!(device, native_vector_width_double, u32);
+// // impl_session_low_level_method_and_nif!(device, native_vector_width_half, u32);
+// // impl_session_low_level_method_and_nif!(device, partition_max_sub_devices, u32);
+// // impl_session_low_level_method_and_nif!(device, preferred_vector_width_char, u32);
+// // impl_session_low_level_method_and_nif!(device, preferred_vector_width_short, u32);
+// // impl_session_low_level_method_and_nif!(device, preferred_vector_width_int, u32);
+// // impl_session_low_level_method_and_nif!(device, preferred_vector_width_long, u32);
+// // impl_session_low_level_method_and_nif!(device, preferred_vector_width_float, u32);
+// // impl_session_low_level_method_and_nif!(device, preferred_vector_width_double, u32);
+// // impl_session_low_level_method_and_nif!(device, preferred_vector_width_half, u32);
+// // impl_session_low_level_method_and_nif!(device, vendor_id, u32);
+// // impl_session_low_level_method_and_nif!(device, available, bool);
+// // impl_session_low_level_method_and_nif!(device, compiler_available, bool);
+// // impl_session_low_level_method_and_nif!(device, endian_little, bool);
+// // impl_session_low_level_method_and_nif!(device, error_correction_support, bool);
+// // impl_session_low_level_method_and_nif!(device, host_unified_memory, bool);
+// // impl_session_low_level_method_and_nif!(device, image_support, bool);
+// // impl_session_low_level_method_and_nif!(device, linker_available, bool);
+// // impl_session_low_level_method_and_nif!(device, preferred_interop_user_sync, bool);
+// // impl_session_low_level_method_and_nif!(device, image2d_max_width, usize);
+// // impl_session_low_level_method_and_nif!(device, image2d_max_height, usize);
+// // impl_session_low_level_method_and_nif!(device, image3d_max_width, usize);
+// // impl_session_low_level_method_and_nif!(device, image3d_max_height, usize);
+// // impl_session_low_level_method_and_nif!(device, image3d_max_depth, usize);
+// // impl_session_low_level_method_and_nif!(device, image_max_buffer_size, usize);
+// // impl_session_low_level_method_and_nif!(device, image_max_array_size, usize);
+// // impl_session_low_level_method_and_nif!(device, max_parameter_size, usize);
+// // impl_session_low_level_method_and_nif!(device, max_work_group_size, usize);
+// // impl_session_low_level_method_and_nif!(device, printf_buffer_size, usize);
+// // impl_session_low_level_method_and_nif!(device, profiling_timer_resolution, usize);
+// // impl_session_low_level_method_and_nif!(device, max_work_item_sizes, Vec<usize>);

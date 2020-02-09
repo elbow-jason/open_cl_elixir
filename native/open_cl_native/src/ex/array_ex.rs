@@ -1,61 +1,63 @@
 use std::fmt;
-use std::ops::Deref;
-use std::sync::RwLock;
+use std::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use rustler::resource::ResourceArc;
 use rustler::types::atom::Atom;
 use rustler::{Encoder, NifStruct};
 
-use crate::atoms;
-use crate::ex::number_ex::{
-    CastNumber, NumEx, Number, NumberType, NumberTyped, NumberTypedT, NumberVector,
+use crate::{
+    atoms, CastNumber, NumEx, NumberType, NumberTyped,
+    NumberListEx, OutputEx, RuntimeNumberList, NumberEx
 };
-use crate::traits::NativeWrapper;
 
 #[derive(Debug)]
 pub struct Array {
-    data: RwLock<NumberVector>,
+    inner: RwLock<RuntimeNumberList>,
 }
 
 impl NumberTyped for Array {
     fn number_type(&self) -> NumberType {
-        self.data.read().unwrap().number_type()
+        self.read_lock().number_type()
     }
 }
 
-impl CastNumber for Array {
-    fn cast_number(&self, number_type: NumberType) -> Array {
-        let number_vector = self.data.read().unwrap().cast_number(number_type);
-        Array::new(number_vector)
+impl From<NumberListEx> for Array {
+    fn from(nums: NumberListEx) -> Array {
+        Array::new(RuntimeNumberList::from(nums))
     }
 }
+
+impl From<Array> for NumberListEx {
+    fn from(a: Array) -> NumberListEx {
+        NumberListEx::from(a.into_inner())
+    }
+}
+
+
+unsafe impl Send for Array {}
+unsafe impl Sync for Array {}
 
 impl Array {
-    pub fn new(data: NumberVector) -> Array {
+    pub fn new(data: RuntimeNumberList) -> Array {
         Array {
-            data: RwLock::new(data),
+            inner: RwLock::new(data),
         }
     }
 
-    pub fn length(&self) -> usize {
-        self.data.read().unwrap().length()
+    pub fn rw_lock(&self) -> &RwLock<RuntimeNumberList> {
+        &self.inner
     }
 
-    pub fn clone_number_vector(&self) -> NumberVector {
-        self.data.read().unwrap().clone()
+    pub fn read_lock(&self) -> RwLockReadGuard<RuntimeNumberList> {
+        self.inner.read().unwrap()
     }
 
-    pub fn extend(&self, number_vector: &NumberVector) {
-        let mut data = self.data.write().unwrap();
-        data.extend(number_vector);
+    pub fn write_lock(&self) -> RwLockWriteGuard<RuntimeNumberList> {
+        self.inner.write().unwrap()
     }
 
-    fn into_resource_arc(self) -> ResourceArc<Self> {
-        ResourceArc::new(self)
-    }
-
-    pub fn cast_to_number_vector(&self, number_type: NumberType) -> NumberVector {
-        self.data.read().unwrap().cast_number(number_type)
+    pub fn into_inner(self) -> RuntimeNumberList {
+        self.inner.into_inner().unwrap()
     }
 }
 
@@ -68,120 +70,178 @@ pub struct ArrayEx {
 
 impl fmt::Debug for ArrayEx {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "ArrayEx {{ native: {:?} }}", self.native())
-    }
-}
-
-impl NativeWrapper<Array> for ArrayEx {
-    fn native(&self) -> &Array {
-        &self.__native__
+        write!(f, "ArrayEx {{ native: {:?} }}", *self.read_lock())
     }
 }
 
 impl ArrayEx {
-    pub fn filled_with<T>(number: T, count: usize) -> ArrayEx
-    where
-        T: NumberTypedT + Number,
-        NumberVector: From<Vec<T>>,
-    {
+    pub fn try_cloned_vec<T: NumberEx>(self) -> OutputEx<Vec<T>> {
+        let inner = self.read_lock();
+        let slice = inner.try_as_slice()?;
+        Ok(slice.to_vec())
+    }
+
+    pub fn filled_with<T: NumberEx>(number: T, count: usize) -> ArrayEx {
         let numbers: Vec<T> = std::iter::repeat(number).take(count).collect();
-        let number_vector = NumberVector::from(numbers);
-        ArrayEx::from_number_vector(number_vector)
+        ArrayEx::from(RuntimeNumberList::from_vec(numbers))
     }
 
-    pub fn from_number_vector(number_vector: NumberVector) -> ArrayEx {
-        ArrayEx::from_array(Array::new(number_vector))
+    pub fn read_lock(&self) -> RwLockReadGuard<RuntimeNumberList> {
+        self.__native__.read_lock()
     }
 
-    pub fn from_array(array: Array) -> ArrayEx {
-        ArrayEx {
-            __native__: array.into_resource_arc(),
-        }
+    pub fn write_lock(&self) -> RwLockWriteGuard<RuntimeNumberList> {
+        self.__native__.write_lock()
     }
 
-    pub fn length(&self) -> usize {
-        self.native().length()
+    pub fn len(&self) -> usize {
+        self.read_lock().len()
     }
 
-    pub fn number_vector(&self) -> NumberVector {
-        self.native().clone_number_vector()
+    pub fn is_empty(&self) -> bool {
+        self.read_lock().len() == 0
     }
 
-    pub fn extend(&self, number_vector: &NumberVector) {
-        self.native().extend(number_vector)
-    }
+    // pub fn extend<T: NumberEx>(&self, other: Vec<T>) {
+    //     self.write_lock().extend(other);
+    // }
 
-    pub fn extend_from_array(&self, other: &ArrayEx) {
-        if self.is_same_array(other) {
-            let mut data = self.native().data.write().unwrap();
-            let copied = data.clone();
-            data.extend(&copied);
-        } else {
-            let other_data = other.native().data.read().unwrap();
-            let mut data = self.native().data.write().unwrap();
-            data.extend(&other_data);
-        }
-    }
-
-    pub fn push(&self, item: NumEx) {
-        let mut data = self.native().data.write().unwrap();
-        data.push(item);
-    }
+    // pub fn push<N: NumberEx>(&self, item: N) {
+    //     self.write_lock().push(item);
+    // }
 
     pub fn is_same_array(&self, other: &ArrayEx) -> bool {
-        std::ptr::eq(self.__native__.deref(), other.__native__.deref())
+        std::ptr::eq(self.__native__.rw_lock(), other.__native__.rw_lock())
     }
 
-    pub fn cast_to_number_vector(&self, number_type: NumberType) -> NumberVector {
-        self.native().cast_to_number_vector(number_type)
+    // pub fn into_rt_list(self) -> RuntimeNumberList {
+    //     self.read_lock().clone()
+    // }
+}
+
+impl From<RuntimeNumberList> for ArrayEx {
+    fn from(list: RuntimeNumberList) -> ArrayEx {
+        ArrayEx::from(Array::new(list))
     }
 }
+
+impl From<Array> for ArrayEx {
+    fn from(arr: Array) -> ArrayEx {
+        ArrayEx{
+            __native__: ResourceArc::new(arr)
+        }
+    }
+}
+
 
 impl NumberTyped for ArrayEx {
     fn number_type(&self) -> NumberType {
-        self.native().number_type()
+        self.read_lock().number_type()
     }
 }
 
-impl CastNumber for ArrayEx {
-    fn cast_number(&self, number_type: NumberType) -> ArrayEx {
-        let array = self.native().cast_number(number_type);
-        ArrayEx::from_array(array)
-    }
-}
+// #[derive(NifRecord)]
+// #[tag = "u8"]
+// pub struct U8(pub u8);
+
+// #[derive(NifRecord)]
+// #[tag = "i8"]
+// pub struct i8(pub i8);
+
+// #[derive(NifRecord)]
+// #[tag = "i8"]
+// pub struct i8(pub i8);
+
+
+
+
+// impl CastNumber for ArrayEx {
+//     fn cast_number(&self, number_type: NumberType) -> ArrayEx {
+//         let arr1 = self.read_lock();
+//         ArrayEx::from((*arr1).cast_number(number_type))
+//     }
+// }
 
 #[rustler::nif]
-fn array_new(number_type: NumberType, number_vector: NumberVector) -> ArrayEx {
-    // TODO fix me. The decoding should
-    let casted = number_vector.cast_number(number_type);
-    ArrayEx::from_number_vector(casted)
+fn array_new(number_type: NumberType, list: NumberListEx) -> ArrayEx {
+    let rt_list = RuntimeNumberList::from(list);
+    assert_eq!(number_type, rt_list.number_type());
+    ArrayEx::from(rt_list)
 }
 
 #[rustler::nif]
 fn array_push(array: ArrayEx, item: NumEx) -> Atom {
-    array.push(item);
+    let mut rt_list = array.write_lock();
+    match item {
+        NumEx::U8(number) => rt_list.push(number),
+        NumEx::I8(number) => rt_list.push(number),
+        NumEx::U16(number) => rt_list.push(number),
+        NumEx::I16(number) => rt_list.push(number),
+        NumEx::U32(number) => rt_list.push(number),
+        NumEx::I32(number) => rt_list.push(number),
+        NumEx::F32(number) => rt_list.push(number),
+        NumEx::U64(number) => rt_list.push(number),
+        NumEx::I64(number) => rt_list.push(number),
+        NumEx::F64(number) => rt_list.push(number),
+        NumEx::Usize(number) => rt_list.push(number),
+        NumEx::Isize(number) => rt_list.push(number),
+    };
     atoms::ok()
 }
 
 #[rustler::nif]
-fn array_data(array: ArrayEx) -> NumberVector {
-    array.number_vector()
+fn array_data(array: ArrayEx) -> NumberListEx {
+    let rt_list = array.read_lock();
+    NumberListEx::from(rt_list.clone())
 }
 
 #[rustler::nif]
 fn array_length(array: ArrayEx) -> usize {
-    array.length()
+    array.read_lock().len()
 }
 
 #[rustler::nif]
-fn array_extend(array: ArrayEx, number_vector: NumberVector) -> Atom {
-    array.extend(&number_vector);
+fn array_extend_from_list(array: ArrayEx, list: NumberListEx) -> Atom {
+    use NumberListEx as L;
+    let mut rt_list = array.write_lock();
+    match list {
+        L::U8(data) => rt_list.extend(data),
+        L::I8(data) => rt_list.extend(data),
+        L::U16(data) => rt_list.extend(data),
+        L::I16(data) => rt_list.extend(data),
+        L::U32(data) => rt_list.extend(data),
+        L::I32(data) => rt_list.extend(data),
+        L::F32(data) => rt_list.extend(data),
+        L::U64(data) => rt_list.extend(data),
+        L::I64(data) => rt_list.extend(data),
+        L::F64(data) => rt_list.extend(data),
+        L::Usize(data) => rt_list.extend(data),
+        L::Isize(data) => rt_list.extend(data),
+    };
     atoms::ok()
 }
 
 #[rustler::nif]
 fn array_extend_from_array(array: ArrayEx, other: ArrayEx) -> Atom {
-    array.extend_from_array(&other);
+    if array.is_same_array(&other) {
+        return atoms::same_array();
+    }
+    let mut self_rt_list = array.write_lock();
+    let other_rt_list = other.read_lock();
+    match other_rt_list.number_type() {
+        NumberType::U8 => self_rt_list.extend_from_slice::<u8>(other_rt_list.force_as_slice()),
+        NumberType::I8 => self_rt_list.extend_from_slice::<i8>(other_rt_list.force_as_slice()),
+        NumberType::U16 => self_rt_list.extend_from_slice::<u16>(other_rt_list.force_as_slice()),
+        NumberType::I16 => self_rt_list.extend_from_slice::<i16>(other_rt_list.force_as_slice()),
+        NumberType::U32 => self_rt_list.extend_from_slice::<u32>(other_rt_list.force_as_slice()),
+        NumberType::I32 => self_rt_list.extend_from_slice::<i32>(other_rt_list.force_as_slice()),
+        NumberType::F32 => self_rt_list.extend_from_slice::<f32>(other_rt_list.force_as_slice()),
+        NumberType::U64 => self_rt_list.extend_from_slice::<u64>(other_rt_list.force_as_slice()),
+        NumberType::I64 => self_rt_list.extend_from_slice::<i64>(other_rt_list.force_as_slice()),
+        NumberType::F64 => self_rt_list.extend_from_slice::<f64>(other_rt_list.force_as_slice()),
+        NumberType::Usize => self_rt_list.extend_from_slice::<usize>(other_rt_list.force_as_slice()),
+        NumberType::Isize => self_rt_list.extend_from_slice::<isize>(other_rt_list.force_as_slice()),
+    }
     atoms::ok()
 }
 
@@ -209,7 +269,7 @@ fn array_number_type(array: ArrayEx) -> NumberType {
     array.number_type()
 }
 
-#[rustler::nif]
-fn array_cast(array: ArrayEx, number_type: NumberType) -> ArrayEx {
-    array.cast_number(number_type)
-}
+// #[rustler::nif]
+// fn array_cast(array: ArrayEx, number_type: NumberType) -> ArrayEx {
+//     array.cast_number(number_type)
+// }

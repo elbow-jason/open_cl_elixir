@@ -17,6 +17,24 @@ macro_rules! impl_native_method_and_nif {
 }
 
 #[macro_export]
+macro_rules! impl_low_level_method_and_nif {
+    ($ex_wrapper:ident, $namespace:ident, $func_name:ident, $ret:ty) => {
+        impl $ex_wrapper {
+            pub fn $func_name(&self) -> OutputEx<$ret> {
+                self.low_level().$func_name().map_err(|e| e.into())
+            }
+        }
+
+        paste::item! {
+            #[rustler::nif]
+            pub fn [<$namespace _self_ $func_name>](item: $ex_wrapper) -> OutputEx<$ret> {
+                item.$func_name()
+            }
+        }
+    };
+}
+
+#[macro_export]
 macro_rules! impl_native_method_into_bitflag_and_nif {
     ($ex_wrapper:ident, $namespace:ident, $func_name:ident, $ret:ident) => {
         impl $ex_wrapper {

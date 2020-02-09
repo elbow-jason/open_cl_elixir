@@ -12,6 +12,7 @@ defmodule OpenCL.MixProject do
       rustler_crates: [
         open_cl_native: [
           mode: rustc_mode(Mix.env())
+          # flags: ["-g"]
         ]
       ],
       elixirc_paths: elixirc_paths(Mix.env()),

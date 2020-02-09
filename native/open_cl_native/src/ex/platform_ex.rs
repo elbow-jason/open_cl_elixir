@@ -1,15 +1,17 @@
 use std::default::Default;
 use std::fmt;
 
-use opencl_core::Platform;
+use opencl_core::ll::ClPlatformID;
+use opencl_core::{Device, Platform};
 use rustler::resource::ResourceArc;
 
 use rustler::{Encoder, NifStruct};
 
 use crate::traits::NativeWrapper;
 
-use super::{DeviceEx, OutputEx, WrapperEx, WrapperExResource};
-
+use super::DeviceEx; // , OutputEx, WrapperEx, WrapperExResource};
+use super::{OutputEx, WrapperEx, WrapperExResource};
+use crate::traits::LowLevelWrapper;
 impl WrapperExResource for Platform {}
 
 #[derive(NifStruct)]
@@ -37,9 +39,15 @@ impl NativeWrapper<Platform> for PlatformEx {
     }
 }
 
+impl LowLevelWrapper<ClPlatformID> for PlatformEx {
+    fn low_level(&self) -> &ClPlatformID {
+        self.__native__.item.low_level_platform()
+    }
+}
+
 impl PlatformEx {
-    pub fn all() -> OutputEx<Vec<PlatformEx>> {
-        Platform::all()
+    pub fn list_all() -> OutputEx<Vec<PlatformEx>> {
+        Platform::list_all()
             .map_err(|e| e.into())
             .map(|platforms| platforms.into_iter().map(|p| PlatformEx::new(p)).collect())
     }
@@ -58,14 +66,43 @@ fn platform_default() -> PlatformEx {
 
 #[rustler::nif]
 fn platform_list_all() -> OutputEx<Vec<PlatformEx>> {
-    PlatformEx::all()
+    PlatformEx::list_all()
 }
 
-impl_native_method_into_other_and_nif!(PlatformEx, platform, all_devices, Vec<DeviceEx>);
-impl_native_method_into_other_and_nif!(PlatformEx, platform, cpu_devices, Vec<DeviceEx>);
-impl_native_method_into_other_and_nif!(PlatformEx, platform, gpu_devices, Vec<DeviceEx>);
-impl_native_method_into_other_and_nif!(PlatformEx, platform, accelerator_devices, Vec<DeviceEx>);
-impl_native_method_into_other_and_nif!(PlatformEx, platform, custom_devices, Vec<DeviceEx>);
+macro_rules! list_devices {
+    ($func_name:ident) => {
+        paste::item! {
+            #[rustler::nif]
+            fn [<platform_ $func_name>](platform: PlatformEx) -> OutputEx<Vec<DeviceEx>> {
+                Device::$func_name(platform.native())
+                    .map(|devices| {
+                        devices.into_iter().map(|d| DeviceEx::new(d)).collect()
+                    })
+                    .map_err(|e| e.into())
+            }
+        }
+    };
+}
+// #[rustler::nif]
+// fn platform_list_all_devices(platform: PlatformEx) -> OutputEx<Vec<DeviceEx>> {
+//     Device::list_all_devices(platform.native())
+//         .map(|devices| {
+//             devices.into_iter().map(|d| DeviceEx::new(d)).collect()
+//         })
+//         .map_err(|e| e.into())
+// }
+
+list_devices!(list_all_devices);
+list_devices!(list_default_devices);
+list_devices!(list_cpu_devices);
+list_devices!(list_gpu_devices);
+list_devices!(list_accelerator_devices);
+list_devices!(list_custom_devices);
+// impl_native_method_into_other_and_nif!(PlatformEx, platform, list_all_devices, Vec<DeviceEx>);
+// impl_native_method_into_other_and_nif!(PlatformEx, platform, cpu_devices, Vec<DeviceEx>);
+// impl_native_method_into_other_and_nif!(PlatformEx, platform, gpu_devices, Vec<DeviceEx>);
+// impl_native_method_into_other_and_nif!(PlatformEx, platform, accelerator_devices, Vec<DeviceEx>);
+// impl_native_method_into_other_and_nif!(PlatformEx, platform, custom_devices, Vec<DeviceEx>);
 
 impl_native_method_and_nif!(PlatformEx, platform, name, String);
 impl_native_method_and_nif!(PlatformEx, platform, version, String);
