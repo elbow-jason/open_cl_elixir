@@ -28,11 +28,11 @@ pub enum NumberType {
 }
 
 impl NumberType {
-    pub fn type_check(&self, t: NumberType) -> OutputEx<()> {
+    pub fn type_check(&self, t: NumberType) -> OutputEx<NumberType> {
         if *self != t {
             return Err((*self).mismatch_error(t).into()) 
         }
-        Ok(())
+        Ok(t)
     }
 
     pub fn mismatch_error(self, t: NumberType) -> NumberTypeError {
@@ -79,7 +79,7 @@ pub trait NumberTyped {
         self.number_type() == other.number_type()
     }
 
-    fn type_check(&self, t: NumberType) -> OutputEx<()> {
+    fn type_check(&self, t: NumberType) -> OutputEx<NumberType> {
         self.number_type().type_check(t)
     }
 
@@ -87,6 +87,10 @@ pub trait NumberTyped {
 
 pub trait NumberTypedT {
     fn number_type_of() -> NumberType;
+
+    fn type_check(t: NumberType) -> OutputEx<NumberType> {
+        Self::number_type_of().type_check(t)
+    }
 }
 
 macro_rules! impl_number_typed_t {

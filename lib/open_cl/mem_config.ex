@@ -1,6 +1,12 @@
 defmodule OpenCL.MemConfig do
   alias OpenCL.MemConfig
 
+  @type native :: nil | %{
+    kernel_access: kernel_access | nil,
+    host_access: host_access | nil,
+    mem_location: mem_location | nil,
+  }
+
   defstruct kernel_access: nil,
             host_access: nil,
             mem_location: nil
@@ -33,21 +39,18 @@ defmodule OpenCL.MemConfig do
   ]
 
   def build(opts) do
-    validate(%MemConfig{
+    %MemConfig{
       kernel_access: Keyword.get(opts, :kernel_access),
       host_access: Keyword.get(opts, :host_access),
       mem_location: Keyword.get(opts, :mem_location)
-    })
+    }
   end
 
-  def validate(%MemConfig{} = mc) do
-    case do_validate(mc) do
-      [] -> {:ok, mc}
-      errors -> {:error, errors}
-    end
-  end
+  def to_native(%MemConfig{kernel_access: nil, host_access: nil, mem_location: nil}), do: nil
+  def to_native(%MemConfig{} = cfg), do: Map.from_struct(cfg)
 
-  defp do_validate(%MemConfig{} = mc) do
+
+  def errors(%MemConfig{} = mc) do
     validate_field(mc, :kernel_access, @kernel_access) ++
       validate_field(mc, :host_access, @host_access) ++
       validate_field(mc, :mem_location, @mem_location)

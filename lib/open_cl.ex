@@ -3,10 +3,10 @@ defmodule OpenCL do
   Documentation for OpenCL.
   """
 
-  @spec add_one_src :: binary()
-  def add_one_src do
+  @spec add_one_u8_src :: binary()
+  def add_one_u8_src do
     """
-    __kernel void add_one(__global int *data) {
+    __kernel void add_one_u8(__global uchar *data) {
         data[get_global_id(0)] += 1;
     }
     """

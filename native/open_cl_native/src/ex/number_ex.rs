@@ -3,6 +3,7 @@ use rustler::NifUntaggedEnum;
 use opencl_core::ll::{KernelArg, SizeAndPtr, ClNumber};
 
 use num_traits::{FromPrimitive, NumCast, ToPrimitive};
+use num_traits::identities::Zero;
 use std::fmt::Debug;
 
 use crate::{NumberType, NumberTypedT, NumberTyped};
@@ -11,7 +12,7 @@ pub trait CastNumber {
     fn cast_number(&self, number_type: NumberType) -> Self;
 }
 
-pub trait NumberEx: ClNumber + NumberTypedT + NumCast + ToPrimitive + FromPrimitive {}
+pub trait NumberEx: ClNumber + NumberTypedT + NumCast + ToPrimitive + FromPrimitive + Zero + From<NumEx> + KernelArg {}
 
 impl NumberEx for u8 {}
 impl NumberEx for i8 {}

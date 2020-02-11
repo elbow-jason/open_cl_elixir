@@ -1,7 +1,7 @@
 use std::fmt;
 
-use opencl_core::{ClNumber, Device, MemConfig, Session};
-// use opencl_core::ll::Session as ClSession;
+use opencl_core::{ClNumber, Device, MemConfig, Session, Buffer, CommandQueueOptions};
+use opencl_core::ll::{utils};
 // use opencl_core::ll::{DevicePtr};
 use rustler::resource::ResourceArc;
 use rustler::{Encoder, NifStruct};
@@ -12,7 +12,8 @@ use crate::traits::NativeWrapper;
 
 use crate::{
     BufferCreatorEx, BufferEx, DeviceEx, MemConfigEx, NumberType, NumberTyped, NumberTypedT,
-    NumberListEx, NumberEx, ArrayEx,
+    NumberListEx, NumberEx, ArrayEx, CommandQueueOptionsEx, RuntimeNumberList, KernelOpEx,
+    ArgEx,
 };
 
 impl WrapperExResource for Session {}
@@ -20,7 +21,6 @@ impl WrapperExResource for Session {}
 #[derive(NifStruct)]
 #[must_use]
 #[module = "OpenCL.Session"]
-#[repr(C)]
 pub struct SessionEx {
     __native__: ResourceArc<WrapperEx<Session>>,
     _unconstructable: (),
@@ -72,7 +72,6 @@ impl SessionEx {
     pub fn native(&self) -> &Session {
         &self.__native__.item
     }
-
     // pub fn execute_kernel(&self, name: &str, dims: DimsEx, ) -> OutputEx<()> {
 
     // }
@@ -170,20 +169,15 @@ fn _create_buffer_from_len<T: ClNumber + NumberTypedT>(
     len: usize,
     mem_config: MemConfig,
 ) -> OutputEx<BufferEx> {
-    let core_buffer = unsafe {
-        sess.native()
-            .create_buffer_with_config::<T, usize>(len, mem_config)
-    }?;
+    let core_buffer = sess.native().create_buffer_with_config::<T, usize>(len, mem_config)?;
     Ok(BufferEx::from_core_buffer(core_buffer))
 }
 
-fn _buffer_from_slice<T: NumberEx>(sess: &SessionEx, data: &[T], mem_config: MemConfig) -> OutputEx<BufferEx> {
-    unsafe { 
-        sess.native()
-            .create_buffer_with_config::<T, &[T]>(data, mem_config)
-            .map(|b| BufferEx::from_core_buffer(b))
-            .map_err(From::from)
-    }
+fn _buffer_from_slice<T: NumberEx>(sess: &SessionEx, data: &[T], mem_config: MemConfig) -> OutputEx<BufferEx> {    
+    sess.native()
+        .create_buffer_with_config::<T, &[T]>(data, mem_config)
+        .map(|b| BufferEx::from_core_buffer(b))
+        .map_err(From::from)
 }
 
 fn create_buffer_from_list(
@@ -230,6 +224,150 @@ fn create_buffer_from_array(
         NT::Isize => _buffer_from_slice(sess, rt_list.force_as_slice::<isize>(), mem_config),
     }
 }
+
+fn _sync_write_buffer<T: NumberEx>(
+    sess: &SessionEx,
+    queue_index: usize,
+    buffer: BufferEx,
+    array: ArrayEx,
+    cq_options: Option<CommandQueueOptionsEx>
+) -> OutputEx<()> {
+    let rt_list = array.read_lock();
+    let data: &[T] = rt_list.force_as_slice();
+    let buffer_t: &Buffer<T> = buffer.wrapper().buffer().unwrap();
+    let cl_cq_opts: Option<CommandQueueOptions> = cq_options.map(|o| o.into());
+    sess.native()
+        .sync_write_buffer::<T, &[T]>(queue_index, buffer_t, data, cl_cq_opts)
+        .map_err(From::from)
+}
+
+
+
+#[rustler::nif]
+pub fn session_self_write_array_to_buffer(
+    session: SessionEx,
+    queue_index: usize,
+    buffer: BufferEx,
+    array: ArrayEx,
+    cq_options: Option<CommandQueueOptionsEx>
+) -> OutputEx<()> {
+    let num_type = buffer.number_type();
+    if num_type != array.number_type() {
+        num_type.mismatch_error(array.number_type());
+    }
+    apply_number_type!(
+        num_type,
+        _sync_write_buffer,
+        [&session, queue_index, buffer, array, cq_options]
+    )
+}
+
+pub fn _sync_read_buffer<T: NumberEx>(
+    sess: &SessionEx,
+    queue_index: usize,
+    buffer: BufferEx,
+    cq_opts_ex: Option<CommandQueueOptionsEx>,
+) -> OutputEx<ArrayEx> {
+    let buffer_t: &Buffer<T> = buffer.wrapper().buffer().unwrap();
+    let data = utils::vec_filled_with::<T>(T::zero(), buffer_t.len());
+    let cq_opts_cl: Option<CommandQueueOptions> = cq_opts_ex.map(|o| o.into());
+    
+    sess.native()
+        .sync_read_buffer(queue_index, buffer_t, data, cq_opts_cl)
+        .map_err(From::from)
+        .map(|num_vec| ArrayEx::from(RuntimeNumberList::from_vec(num_vec.unwrap())))
+}
+
+#[rustler::nif]
+pub fn session_self_read_buffer(
+    session: SessionEx,
+    queue_index: usize,
+    buffer: BufferEx,
+    cq_opts_ex: Option<CommandQueueOptionsEx>
+) -> OutputEx<ArrayEx> {
+    let num_type = buffer.number_type();
+    apply_number_type!(
+        num_type,
+        _sync_read_buffer,
+        [&session, queue_index, buffer, cq_opts_ex]
+    )
+}
+
+
+pub fn _execute_sync_kernel_operation<T: NumberEx>(
+    session: &SessionEx,
+    queue_index: usize,
+    kernel_op_ex: KernelOpEx,
+) -> OutputEx<()> {
+    let kernel_op_cl = kernel_op_ex.into_kernel_operation::<T>()?;
+    let _ = session
+        .native()
+        .execute_sync_kernel_operation::<T>(queue_index, kernel_op_cl)?;
+    Ok(())
+}
+
+#[rustler::nif]
+pub fn session_self_execute_kernel_operation(
+    session: SessionEx,
+    queue_index: usize,
+    kernel_op_ex: KernelOpEx,
+) -> OutputEx<()> {
+    let num_type = kernel_op_ex.number_type();
+    apply_number_type!(
+        num_type,
+        _execute_sync_kernel_operation,
+        [&session, queue_index, kernel_op_ex]
+    )
+}
+
+//     match () {
+//         (U8, U8) => ,
+//         (I8, I8) => _sync_write_buffer::<i8>::(&session, queue_index, buffer, opts, cq_options),
+//         (U16, U16) => _sync_write_buffer::<u16>::(&session, queue_index, buffer, opts, cq_options),
+//         (I16, I16) => _sync_write_buffer::<i16>::(&session, queue_index, buffer, opts, cq_options),
+//         (U32, U32) => _sync_write_buffer::<u32>::(&session, queue_index, buffer, opts, cq_options),
+//         (I32, I32) => _sync_write_buffer::<i32>::(&session, queue_index, buffer, opts, cq_options),
+//         (F32, F32) => _sync_write_buffer::<f32>::(&session, queue_index, buffer, opts, cq_options),
+//         (U64, U64) => _sync_write_buffer::<u64>::(&session, queue_index, buffer, opts, cq_options),
+//         (I64, I64) => _sync_write_buffer::<i64>::(&session, queue_index, buffer, opts, cq_options),
+//         (F64, F64) => _sync_write_buffer::<f64>::(&session, queue_index, buffer, opts, cq_options),
+//         (Usize, Usize) => _sync_write_buffer::<usize>::(&session, queue_index, buffer, opts, cq_options),
+//         (Isize, Isize) => _sync_write_buffer::<isize>::(&session, queue_index, buffer, opts, cq_options),
+//         (buffer_t, array_t) => Err(buffer_t.mismatch_error(array_t))
+//     }
+
+//     pub fn sync_write_buffer<'a, T: ClNumber, H: Into<VecOrSlice<'a, T>>>(
+//         &mut self,
+//         queue_index: usize,
+//         buffer: &Buffer<T>,
+//         host_buffer: H,
+//         opts: Option<CommandQueueOptions>,
+//     ) -> Output<()> {
+//         let queue_locker: &RwLock<ClCommandQueue> = self.get_queue_by_index(queue_index)?;
+//         let mut queue_lock = queue_locker.write().unwrap();
+//         let mut buffer_lock = buffer.write_lock();
+//         unsafe {
+//             let event: ClEvent = queue_lock.write_buffer(&mut (*buffer_lock), host_buffer, opts)?;
+//             event.wait()
+//         }
+//     }
+
+//     creator_ex.check_matches_type(number_type)?;
+
+//     let mem_config = build_mem_config(config, &creator_ex);
+//     match creator_ex {
+//         BufferCreatorEx::List(list) => {
+//             create_buffer_from_list(&session, list, mem_config)
+//         }
+//         BufferCreatorEx::Array(arr) => {
+//             create_buffer_from_array(&session, arr, mem_config)
+//         }
+//         BufferCreatorEx::Length(len) => {
+//             create_buffer_from_len(&session, number_type, len, mem_config)
+//         }
+//     }
+// }
+// session_self_write_array_to_buffer
 
 // #[rustler::nif]
 // fn session_self_execute(session: SessionEx, kernel_name: String) -> OutputEx<KernelEx> {

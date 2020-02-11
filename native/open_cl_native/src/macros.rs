@@ -118,3 +118,50 @@ macro_rules! impl_bitflag_ex_for {
         }
     };
 }
+
+#[macro_export]
+macro_rules! apply_number_type {
+    ($num_type:expr, $func:ident, [ $( $arg:expr ),* ]) => {
+        match $num_type.number_type() {
+            NumberType::U8 => $func::<u8>($( $arg ),*),
+            NumberType::I8 => $func::<i8>($( $arg ),*),
+            NumberType::U16 => $func::<u16>($( $arg ),*),
+            NumberType::I16 => $func::<i16>($( $arg ),*),
+            NumberType::U32 => $func::<u32>($( $arg ),*),
+            NumberType::I32 => $func::<i32>($( $arg ),*),
+            NumberType::F32 => $func::<f32>($( $arg ),*),
+            NumberType::U64 => $func::<u64>($( $arg ),*),
+            NumberType::I64 => $func::<i64>($( $arg ),*),
+            NumberType::F64 => $func::<f64>($( $arg ),*),
+            NumberType::Usize => $func::<usize>($( $arg ),*),
+            NumberType::Isize => $func::<isize>($( $arg ),*),
+        }
+    }
+}
+
+
+
+#[macro_export]
+macro_rules! type_check {
+    ($t1:ty, $t2:ty) => {
+        {
+            $t1::number_type_of().type_check($t2::number_type_of())
+        }
+    };
+    ($t1:ty, $t2:ident) => {
+        {
+            $t1::number_type_of().type_check($t2.number_type())
+        }
+    };
+    ($t1:ident, $t2:ty) => {
+        {
+            $t1.number_type().type_check($t2::number_type_of())
+        }
+    };
+    ($t1:ident, $t2:ident) => {
+        {
+            $t1::number_type().type_check($t2.number_type())
+        }
+    };
+}
+

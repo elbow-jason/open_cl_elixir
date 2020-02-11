@@ -1,15 +1,20 @@
 defmodule OpenCL.Native do
   use Rustler, otp_app: :open_cl, crate: :open_cl_native
 
-  #   alias OpenCL.Array
+  alias OpenCL.Array
   alias OpenCL.Device
   alias OpenCL.Platform
+  alias OpenCL.Buffer
+  alias OpenCL.MemConfig
+  alias OpenCL.KernelOp
 
   import OpenCL.NifNotLoadedError, only: [err: 0]
 
   @type resource_ref :: reference()
 
-  @type output(item) :: {:ok, item} | {:error, String.t()}
+  @type output(item) :: {:ok, item} | {:error, String.t()} | :invalid_variant
+
+  @type side_effect_output :: :ok | {:error, String.t()} | :invalid_variant
 
   @type number_type :: :u8 | :i8 | :u16 | :i16 | :u32 | :i32 | :f32 | :u64 | :i64 | :f64
 
@@ -296,11 +301,20 @@ defmodule OpenCL.Native do
 
   @type len :: non_neg_integer()
 
-  @spec session_self_create_buffer(Session.t(), number_type(), len() | data(), any()) ::
+  @spec session_self_create_buffer(Session.t(), number_type(), len() | data(), MemConfig.native()) ::
           output(Buffer.t())
   def session_self_create_buffer(_session, _type, _len_or_data, _config), do: err()
 
+  @spec session_self_write_array_to_buffer(Session.t(), non_neg_integer(), Buffer.t(), Array.t(), CommandQueueOpts.native()) ::
+    output({})
+  def session_self_write_array_to_buffer(_session, _queue_index, _buffer, _array, _cq_opts), do: err()
 
+  @spec session_self_read_buffer(Session.t(), non_neg_integer(), Buffer.t(), CommandQueueOpts.native()) ::
+    output(Array.t())
+  def session_self_read_buffer(_session, _queue_index, _buffer, _cq_opts), do: err()
+
+  @spec session_self_execute_kernel_operation(Session.t(), non_neg_integer(), KernelOp.t()) :: output(non_neg_integer() | Buffer.t())
+  def session_self_execute_kernel_operation(_session, _queue_index, _kernel_op), do: err()
 
   #   @spec session_self_device_name(Session.t()) :: output(String.t())
   #   def session_self_device_name(_session), do: err()
@@ -478,7 +492,7 @@ defmodule OpenCL.Native do
 
     def array_push(_array, _number), do: err()
 
-    def array_extend(_array, _numbers), do: err()
+    def array_extend_from_list(_array, _list_of_numbers), do: err()
 
     def array_extend_from_array(_array, _other), do: err()
 
@@ -490,7 +504,7 @@ defmodule OpenCL.Native do
 
   #   def buffer_build_from_array(_session, _dims, _number_type, _array, _access), do: err()
 
-  #   def buffer_to_array(_buffer), do: err()
+    def buffer_length(_buffer), do: err()
 
   #   def buffer_reference_count(_buffer), do: err()
 

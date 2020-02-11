@@ -4,11 +4,22 @@ defmodule OpenCL.KernelOp do
   alias OpenCL.CommandQueueOpts
   alias OpenCL.Work
 
+  @type arg :: number() | Buffer.t()
+  @type arg_index :: non_neg_integer()
+
+  @type t :: %KernelOp{
+    name: String.t(),
+    args: [arg],
+    work: Work.t(),
+    returning: nil | arg_index(),
+    command_queue_opts: CommandQueueOpts.native()
+  }
+
   defstruct name: nil,
             args: [],
             work: nil,
             returning: nil,
-            command_queue_opts: []
+            command_queue_opts: nil
 
   def build(name, args, work, opts \\ []) do
     %KernelOp{
@@ -20,20 +31,23 @@ defmodule OpenCL.KernelOp do
     }
   end
 
+  def get_return_value(%KernelOp{returning: nil}), do: nil
+  def get_return_value(%KernelOp{returning: index, args: args}) when is_integer(index) do
+    Enum.at(args, index)
+  end
 
-  def validate(%KernelOp{} = op) do
-    [
+  def to_native(%KernelOp{work: work} = kernel_op) do
+    %KernelOp{ kernel_op | work: Work.to_native(work)}
+  end
+
+  def errors(%KernelOp{} = op) do
+    List.flatten([
       name_errors(op),
       args_errors(op),
       work_errors(op),
       returning_errors(op),
       cq_opts_errors(op)
-    ]
-    |> List.flatten()
-    |> case do
-      [] -> {:ok, op}
-      errors -> {:error, errors}
-    end
+    ])
   end
 
   defp resolve_command_queue_opts(opts) do
@@ -48,20 +62,15 @@ defmodule OpenCL.KernelOp do
   end
 
   defp work_errors(%KernelOp{work: work}) do
-    case Work.validate(work) do
-      {:ok, _} -> []
-      {:error, errors} when is_list(errors) -> errors
-    end
+    Work.errors(work)
   end
 
-  defp cq_opts_errors(%KernelOp{command_queue_opts: nil}), do: []
   defp cq_opts_errors(%KernelOp{command_queue_opts: %CommandQueueOpts{} = cq_opts}) do
-    case CommandQueueOpts.validate(cq_opts) do
-      {:ok, _} -> []
-      {:error, errors} when is_list(errors) -> errors
-    end
+    CommandQueueOpts.errors(cq_opts)
   end
-
+  defp cq_opts_errors(%KernelOp{command_queue_opts: nil}) do
+    []
+  end
   defp cq_opts_errors(%KernelOp{command_queue_opts: _}) do
     [command_queue_opts: "must be a CommandQueueOpts struct or nil"]
   end

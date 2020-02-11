@@ -17,7 +17,7 @@ defmodule OpenCL.Array do
   end
 
   def extend(array, numbers) when is_list(numbers) do
-    Native.array_extend(array, numbers)
+    Native.array_extend_from_list(array, numbers)
   end
 
   defdelegate type(array), to: Native, as: :array_number_type

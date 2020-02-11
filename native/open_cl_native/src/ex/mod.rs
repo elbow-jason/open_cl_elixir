@@ -22,13 +22,11 @@ pub use wrapper_ex::{WrapperEx, WrapperExResource};
 
 pub use array_ex::{Array, ArrayEx};
 
-
 pub use buffer_ex::*;
 pub use dims_ex::{Dimension, DimsEx};
 pub use kernel_ex::*;
 pub use number_ex::*;
 pub use number_list_ex::*;
-
 
 pub use session_ex::SessionEx;
 

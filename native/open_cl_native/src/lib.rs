@@ -103,6 +103,9 @@ rustler::init! {
         session_ex::session_create_with_devices,
         session_ex::session_self_devices,
         session_ex::session_self_create_buffer,
+        session_ex::session_self_write_array_to_buffer,
+        session_ex::session_self_read_buffer,
+        session_ex::session_self_execute_kernel_operation,
         // session_ex::session_self_device_name,
         // session_ex::session_self_device_opencl_c_version,
         // session_ex::session_self_device_profile,
@@ -169,7 +172,7 @@ rustler::init! {
         // array_ex::array_cast,
 
         // DEVICE_BUFFER
-        // device_buffer_ex::buffer_build_from_array,
+        buffer_ex::buffer_length,
         // device_buffer_ex::buffer_to_array,
         // device_buffer_ex::buffer_reference_count,
 

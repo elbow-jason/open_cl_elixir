@@ -15,6 +15,7 @@ use crate::{
     ErrorEx,
     ArrayEx,
     NumberListEx,
+    NumberEx,
     // RuntimeNumberList,
 };
 
@@ -96,14 +97,19 @@ impl BufferWrapper {
         Ok(native_buffer)
     }
 
-    pub fn get_ref<T: ClNumber + NumberTypedT>(&self) -> OutputEx<&Buffer<T>> {
+    pub fn buffer<T: ClNumber + NumberTypedT>(&self) -> OutputEx<&Buffer<T>> {
         self.type_check::<T>()?;
         Ok(unsafe { self.inner.get_ref() })
     }
 
-    pub fn size<T: ClNumber + NumberTypedT>(&self) -> OutputEx<usize> {
+    pub fn size<T: NumberEx>(&self) -> OutputEx<usize> {
         let buf_ref: &Buffer<T> = unsafe { self.inner.get_ref() };
         buf_ref.size().map_err(From::from)
+    }
+
+    pub fn len<T: NumberEx>(&self) -> OutputEx<usize> {
+        let size = self.size::<T>()?;
+        Ok(self.t.size_of() * size)
     }
 }
 
@@ -158,6 +164,13 @@ impl_buffer_conv!(isize);
 #[module = "OpenCL.Buffer"]
 pub struct BufferEx {
     __native__: ResourceArc<BufferWrapper>
+}
+
+impl Clone for BufferEx {
+    fn clone(&self) -> BufferEx {
+        let cloned_resource_arc = self.__native__.clone();
+        BufferEx { __native__: cloned_resource_arc }
+    }
 }
 
 impl BufferEx {
@@ -340,13 +353,17 @@ impl MemConfigEx {
             MemConfigEx::Builder(b) => b,
         }
     }
-  
 }
 
-// #[rustler::nif]
-// pub fn buffer_reference_count(buffer: BufferEx) -> u32 {
-//     buffer.wrapper().reference_count()
-// }
+fn _buffer_len<T: NumberEx>(buff: &BufferWrapper) -> OutputEx<usize> {
+    buff.len::<T>()
+}
+
+#[rustler::nif]
+pub fn buffer_length(buffer: BufferEx) -> OutputEx<usize> {
+    let w = buffer.wrapper();
+    apply_number_type!(w.t, _buffer_len, [w])
+}
 
 // use num_traits::Num;
 // use std::fmt;
