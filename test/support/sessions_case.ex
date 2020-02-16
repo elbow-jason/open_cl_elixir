@@ -21,7 +21,7 @@ defmodule OpenCL.SessionsCase do
         Enum.filter(devices, &Device.usable?/1)
       end)
     src = SourceHelpers.full()
-    assert {:ok, sessions} = Session.create(src)
+    {:ok, sessions} = Session.create(src)
     sessions = Enum.take(sessions, 1)
     {:ok, sessions: sessions}
   end

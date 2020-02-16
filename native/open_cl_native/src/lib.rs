@@ -1,4 +1,6 @@
-#[macro_use]
+#![allow(dead_code)]
+
+
 extern crate log;
 #[macro_use]
 extern crate failure;
@@ -170,7 +172,7 @@ rustler::init! {
         array_ex::array_extend_from_list,
         array_ex::array_extend_from_array,
         array_ex::array_number_type,
-        // array_ex::array_cast,
+        array_ex::array_cast,
 
         // DEVICE_BUFFER
         buffer_ex::buffer_length,
@@ -184,8 +186,8 @@ rustler::init! {
 fn load<'a>(env: Env<'a>, _load_info: Term<'a>) -> bool {
     env_logger::init();
 
-    debug!("this is a debug {}", "message");
-    error!("this is printed by default");
+    // debug!("this is a debug {}", "message");
+    // error!("this is printed by default");
     ex::define_resources(env);
     true
 }

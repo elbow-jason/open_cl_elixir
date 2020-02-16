@@ -13,32 +13,34 @@ defmodule OpenCL.Session do
   @type create_option ::
           {:command_queue_properties, CommandQueueProps.t()}
           | {:devices, [Device.t()]}
-          | {:device, Device.t()}
 
-  @spec create(String.t()) :: {:ok, [t()]} | {:error, any()}
-  def create(src) do
-    create(src, [])
-  end
+  @type create_result :: {:ok, [t()]} | {:error, any()}
 
-  @spec create(String.t(), [create_option]) ::  {:ok, [t()]} | {:error, any()}
-  def create(src, opts) do
-    props = get_props(opts)
-
-    case get_devices(opts) do
-      [] ->
-        Native.session_create(src, props)
-
-      device_or_devices ->
-        device_or_devices
-        |> List.wrap()
-        |> Native.session_create_with_devices(src, props)
+  @spec create(String.t(), [create_option]) :: create_result()
+  def create(src, opts \\ []) do
+    case Keyword.fetch(opts, :devices) do
+      {:ok, devices} when is_list(devices) ->
+        create_with_devices(src, devices, opts)
+      :error ->
+        src
+        |> Native.session_create(get_props(opts))
+        |> handle_return(opts)
     end
   end
 
+  @spec create_with_devices(String.t(), [Device.t], [create_option]) :: create_result()
+  def create_with_devices(src, devices, opts) do
+     devices
+    |> Native.session_create_with_devices(src, get_props(opts))
+    |> handle_return(opts)
+  end
 
+  defp handle_return({:ok, sessions}, _opts), do: {:ok, sessions}
+  defp handle_return(:invalid_variant, opts), do: create_session_errors(opts)
+  defp handle_return({:error, _} = err, _), do: err
 
-  defp get_devices(opts) do
-    Keyword.get(opts, :devices) || Keyword.get(opts, :device) || []
+  defp create_session_errors(opts) do
+    CommandQueueProps.errors(get_props(opts))
   end
 
   defp get_props(opts) do

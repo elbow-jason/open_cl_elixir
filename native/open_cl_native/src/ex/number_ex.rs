@@ -1,4 +1,4 @@
-use rustler::NifUntaggedEnum;
+use rustler::{NifUntaggedEnum};
 
 use opencl_core::ll::{ClNumber, KernelArg, SizeAndPtr};
 
@@ -12,23 +12,24 @@ pub trait CastNumber {
     fn cast_number(&self, number_type: NumberType) -> Self;
 }
 
+
 pub trait NumberEx:
     ClNumber + NumberTypedT + NumCast + ToPrimitive + FromPrimitive + Zero + From<NumEx> + KernelArg
 {
 }
 
-impl NumberEx for u8 {}
-impl NumberEx for i8 {}
-impl NumberEx for u16 {}
-impl NumberEx for i16 {}
-impl NumberEx for u32 {}
-impl NumberEx for i32 {}
-impl NumberEx for f32 {}
-impl NumberEx for u64 {}
-impl NumberEx for i64 {}
-impl NumberEx for f64 {}
-impl NumberEx for usize {}
-impl NumberEx for isize {}
+impl<'a> NumberEx for u8 {}
+impl<'a> NumberEx for i8 {}
+impl<'a> NumberEx for u16 {}
+impl<'a> NumberEx for i16 {}
+impl<'a> NumberEx for u32 {}
+impl<'a> NumberEx for i32 {}
+impl<'a> NumberEx for f32 {}
+impl<'a> NumberEx for u64 {}
+impl<'a> NumberEx for i64 {}
+impl<'a> NumberEx for f64 {}
+impl<'a> NumberEx for usize {}
+impl<'a> NumberEx for isize {}
 
 // #[derive(NifRecord)]
 // #[tag = "global_work_size"]

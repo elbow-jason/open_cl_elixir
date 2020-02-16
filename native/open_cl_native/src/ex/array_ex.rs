@@ -3,7 +3,7 @@ use std::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use rustler::resource::ResourceArc;
 use rustler::types::atom::Atom;
-use rustler::{Encoder, NifStruct};
+use rustler::{Encoder, NifStruct, Error, ListIterator, Decoder};
 
 use crate::{
     atoms, CastNumber, NumEx, NumberEx, NumberListEx, NumberType, NumberTyped, OutputEx,
@@ -150,37 +150,37 @@ impl NumberTyped for ArrayEx {
 // #[tag = "i8"]
 // pub struct i8(pub i8);
 
-// impl CastNumber for ArrayEx {
-//     fn cast_number(&self, number_type: NumberType) -> ArrayEx {
-//         let arr1 = self.read_lock();
-//         ArrayEx::from((*arr1).cast_number(number_type))
-//     }
-// }
+impl CastNumber for ArrayEx {
+    fn cast_number(&self, number_type: NumberType) -> ArrayEx {
+        let arr1 = self.read_lock();
+        ArrayEx::from((*arr1).cast_number(number_type))
+    }
+}
+
+fn _list_iterator_to_vec<'a, T: NumberEx + Decoder<'a>>(iter: ListIterator<'a>) -> Result<Vec<T>, Error> {
+    iter.map(|x| x.decode::<T>()).collect()
+}
+
+fn _list_iterator_to_rt_list<'a, T: NumberEx + Decoder<'a>>(iter: ListIterator<'a>) -> Result<RuntimeNumberList, Error> {
+    let data: Vec<T> = _list_iterator_to_vec(iter)?;
+    Ok(RuntimeNumberList::from_vec(data))
+}
 
 #[rustler::nif]
-fn array_new(number_type: NumberType, list: NumberListEx) -> ArrayEx {
-    let rt_list = RuntimeNumberList::from(list);
-    assert_eq!(number_type, rt_list.number_type());
-    ArrayEx::from(rt_list)
+fn array_new<'a>(number_type: NumberType, iter: ListIterator<'a>) -> Result<ArrayEx, Error> {
+    let rt_list = apply_number_type!(number_type, _list_iterator_to_rt_list, [iter])?;
+    Ok(ArrayEx::from(rt_list))
+}
+
+fn _push_to_rt_list<T: NumberEx>(rt_list: &mut RuntimeNumberList, num: NumEx) {
+    rt_list.push::<T>(From::from(num));
 }
 
 #[rustler::nif]
 fn array_push(array: ArrayEx, item: NumEx) -> Atom {
+    let number_type = array.number_type();
     let mut rt_list = array.write_lock();
-    match item {
-        NumEx::U8(number) => rt_list.push(number),
-        NumEx::I8(number) => rt_list.push(number),
-        NumEx::U16(number) => rt_list.push(number),
-        NumEx::I16(number) => rt_list.push(number),
-        NumEx::U32(number) => rt_list.push(number),
-        NumEx::I32(number) => rt_list.push(number),
-        NumEx::F32(number) => rt_list.push(number),
-        NumEx::U64(number) => rt_list.push(number),
-        NumEx::I64(number) => rt_list.push(number),
-        NumEx::F64(number) => rt_list.push(number),
-        NumEx::Usize(number) => rt_list.push(number),
-        NumEx::Isize(number) => rt_list.push(number),
-    };
+    apply_number_type!(number_type, _push_to_rt_list, [&mut rt_list, item]);
     atoms::ok()
 }
 
@@ -195,72 +195,90 @@ fn array_length(array: ArrayEx) -> usize {
     array.read_lock().len()
 }
 
-#[rustler::nif]
-fn array_extend_from_list(array: ArrayEx, list: NumberListEx) -> Atom {
-    use NumberListEx as L;
-    let mut rt_list = array.write_lock();
-    match list {
-        L::U8(data) => rt_list.extend(data),
-        L::I8(data) => rt_list.extend(data),
-        L::U16(data) => rt_list.extend(data),
-        L::I16(data) => rt_list.extend(data),
-        L::U32(data) => rt_list.extend(data),
-        L::I32(data) => rt_list.extend(data),
-        L::F32(data) => rt_list.extend(data),
-        L::U64(data) => rt_list.extend(data),
-        L::I64(data) => rt_list.extend(data),
-        L::F64(data) => rt_list.extend(data),
-        L::Usize(data) => rt_list.extend(data),
-        L::Isize(data) => rt_list.extend(data),
-    };
-    atoms::ok()
+fn _extend_rt_with_list_iterator<'a, T: NumberEx + Decoder<'a>>(rt_list: &mut RuntimeNumberList, iter: ListIterator<'a>) -> Result<(), Error> {
+    let other = _list_iterator_to_vec::<T>(iter)?;
+    Ok(_extend_rt_list_with_slice(rt_list, &other[..]))
 }
 
 #[rustler::nif]
-fn array_extend_from_array(array: ArrayEx, other: ArrayEx) -> Atom {
-    if array.is_same_array(&other) {
-        return atoms::same_array();
-    }
+fn array_extend_from_list<'a>(array: ArrayEx, iter: ListIterator<'a>) -> Result<(), Error> {
+    let number_type = array.number_type();
+    let mut rt_list = array.write_lock();
+    apply_number_type!(number_type, _extend_rt_with_list_iterator, [&mut rt_list, iter])
+}
+
+fn _extend_rt_list<T: NumberEx>(rt_list1: &mut RuntimeNumberList, rt_list2: &RuntimeNumberList) {
+    _extend_rt_list_with_slice::<T>(rt_list1, rt_list2.force_as_slice())
+}
+
+fn _extend_same_rt_list<T: NumberEx>(rt_list: &mut RuntimeNumberList) {
+    let v: Vec<T> = rt_list.force_cloned_vec();
+    _extend_rt_list_with_slice(rt_list, &v[..])
+}
+
+fn _extend_rt_list_with_slice<T: NumberEx>(rt_list: &mut RuntimeNumberList, other: &[T]) {
+    rt_list.extend_from_slice::<T>(other);
+}
+
+#[rustler::nif]
+fn array_extend_from_array(array: ArrayEx, other: ArrayEx) -> OutputEx<()> {
+    let number_type = array.number_type();
+    number_type.type_check(other.number_type())?;
     let mut self_rt_list = array.write_lock();
-    let other_rt_list = other.read_lock();
-    match other_rt_list.number_type() {
-        NumberType::U8 => self_rt_list.extend_from_slice::<u8>(other_rt_list.force_as_slice()),
-        NumberType::I8 => self_rt_list.extend_from_slice::<i8>(other_rt_list.force_as_slice()),
-        NumberType::U16 => self_rt_list.extend_from_slice::<u16>(other_rt_list.force_as_slice()),
-        NumberType::I16 => self_rt_list.extend_from_slice::<i16>(other_rt_list.force_as_slice()),
-        NumberType::U32 => self_rt_list.extend_from_slice::<u32>(other_rt_list.force_as_slice()),
-        NumberType::I32 => self_rt_list.extend_from_slice::<i32>(other_rt_list.force_as_slice()),
-        NumberType::F32 => self_rt_list.extend_from_slice::<f32>(other_rt_list.force_as_slice()),
-        NumberType::U64 => self_rt_list.extend_from_slice::<u64>(other_rt_list.force_as_slice()),
-        NumberType::I64 => self_rt_list.extend_from_slice::<i64>(other_rt_list.force_as_slice()),
-        NumberType::F64 => self_rt_list.extend_from_slice::<f64>(other_rt_list.force_as_slice()),
-        NumberType::Usize => {
-            self_rt_list.extend_from_slice::<usize>(other_rt_list.force_as_slice())
-        }
-        NumberType::Isize => {
-            self_rt_list.extend_from_slice::<isize>(other_rt_list.force_as_slice())
-        }
+    if array.is_same_array(&other) {
+        apply_number_type!(number_type, _extend_same_rt_list, [&mut self_rt_list]);
+        Ok(())
+    } else {
+        let other_rt_list = other.read_lock();
+        apply_number_type!(number_type, _extend_rt_list, [&mut self_rt_list, &other_rt_list]);
+        Ok(())
     }
-    atoms::ok()
+    
+    // match other_rt_list.number_type() {
+    //     NumberType::U8 => self_rt_list.extend_from_slice::<u8>(other_rt_list.force_as_slice()),
+    //     NumberType::I8 => self_rt_list.extend_from_slice::<i8>(other_rt_list.force_as_slice()),
+    //     NumberType::U16 => self_rt_list.extend_from_slice::<u16>(other_rt_list.force_as_slice()),
+    //     NumberType::I16 => self_rt_list.extend_from_slice::<i16>(other_rt_list.force_as_slice()),
+    //     NumberType::U32 => self_rt_list.extend_from_slice::<u32>(other_rt_list.force_as_slice()),
+    //     NumberType::I32 => self_rt_list.extend_from_slice::<i32>(other_rt_list.force_as_slice()),
+    //     NumberType::F32 => self_rt_list.extend_from_slice::<f32>(other_rt_list.force_as_slice()),
+    //     NumberType::U64 => self_rt_list.extend_from_slice::<u64>(other_rt_list.force_as_slice()),
+    //     NumberType::I64 => self_rt_list.extend_from_slice::<i64>(other_rt_list.force_as_slice()),
+    //     NumberType::F64 => self_rt_list.extend_from_slice::<f64>(other_rt_list.force_as_slice()),
+    //     NumberType::Usize => {
+    //         self_rt_list.extend_from_slice::<usize>(other_rt_list.force_as_slice())
+    //     }
+    //     NumberType::Isize => {
+    //         self_rt_list.extend_from_slice::<isize>(other_rt_list.force_as_slice())
+    //     }
+    // }
+    
+}
+
+fn _array_filled_with<T: NumberEx + Into<T>>(filler: NumEx, count: usize) -> ArrayEx {
+    let num: T = filler.into();
+    ArrayEx::filled_with::<T>(num, count)
 }
 
 #[rustler::nif]
 fn array_new_filled_with(number_type: NumberType, filler: NumEx, count: usize) -> ArrayEx {
-    let casted = filler.cast_number(number_type);
-    match casted {
-        NumEx::U8(number) => ArrayEx::filled_with::<u8>(number, count),
-        NumEx::I8(number) => ArrayEx::filled_with::<i8>(number, count),
-        NumEx::U16(number) => ArrayEx::filled_with::<u16>(number, count),
-        NumEx::I16(number) => ArrayEx::filled_with::<i16>(number, count),
-        NumEx::U32(number) => ArrayEx::filled_with::<u32>(number, count),
-        NumEx::I32(number) => ArrayEx::filled_with::<i32>(number, count),
-        NumEx::F32(number) => ArrayEx::filled_with::<f32>(number, count),
-        NumEx::U64(number) => ArrayEx::filled_with::<u64>(number, count),
-        NumEx::I64(number) => ArrayEx::filled_with::<i64>(number, count),
-        NumEx::F64(number) => ArrayEx::filled_with::<f64>(number, count),
-        NumEx::Usize(number) => ArrayEx::filled_with::<usize>(number, count),
-        NumEx::Isize(number) => ArrayEx::filled_with::<isize>(number, count),
-    }
+    apply_number_type!(number_type, _array_filled_with, [filler, count])
+    // let casted = filler.cast_number(number_type);
+
+    // match casted {
+    //     NumEx::U8(number) => ArrayEx::filled_with::<u8>(number, count),
+    //     NumEx::I8(number) => ArrayEx::filled_with::<i8>(number, count),
+    //     NumEx::U16(number) => ArrayEx::filled_with::<u16>(number, count),
+    //     NumEx::I16(number) => ArrayEx::filled_with::<i16>(number, count),
+    //     NumEx::U32(number) => ArrayEx::filled_with::<u32>(number, count),
+    //     NumEx::I32(number) => ArrayEx::filled_with::<i32>(number, count),
+    //     NumEx::F32(number) => ArrayEx::filled_with::<f32>(number, count),
+    //     NumEx::U64(number) => ArrayEx::filled_with::<u64>(number, count),
+    //     NumEx::I64(number) => ArrayEx::filled_with::<i64>(number, count),
+    //     NumEx::F64(number) => ArrayEx::filled_with::<f64>(number, count),
+    //     NumEx::Usize(number) => ArrayEx::filled_with::<usize>(number, count),
+    //     NumEx::Isize(number) => ArrayEx::filled_with::<isize>(number, count),
+    // }
 }
 
 #[rustler::nif]
@@ -268,7 +286,7 @@ fn array_number_type(array: ArrayEx) -> NumberType {
     array.number_type()
 }
 
-// #[rustler::nif]
-// fn array_cast(array: ArrayEx, number_type: NumberType) -> ArrayEx {
-//     array.cast_number(number_type)
-// }
+#[rustler::nif]
+fn array_cast(array: ArrayEx, number_type: NumberType) -> ArrayEx {
+    array.cast_number(number_type)
+}

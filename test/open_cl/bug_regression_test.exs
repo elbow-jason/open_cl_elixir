@@ -5,21 +5,7 @@ defmodule OpenCL.BugRegressionTest do
 
   alias OpenCL.Session
   alias OpenCL.Array
-  alias OpenCL.Platform
   alias OpenCL.Buffer
-  alias OpenCL.Device
-
-  @src_thing """
-  __kernel void thing(uchar a) {
-    // noop
-  }
-  """
-
-  @src_add_one_u8 """
-  __kernel void add_one_u8(__global uchar *nums) {
-    nums[get_global_id(0)] += 1;
-  }
-  """
 
   test "12_JAN_2020 - A buffer that IS used in a kernel is thread-safe", %{sessions: sessions} do
     for session <- sessions do
@@ -36,7 +22,6 @@ defmodule OpenCL.BugRegressionTest do
         end
       end
     end
-    :timer.sleep(5000)
   end
 
   test "6_JAN_2020 - A buffer that is not used in a kernel is thread-safe", %{sessions: sessions} do

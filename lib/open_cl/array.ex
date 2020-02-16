@@ -13,11 +13,19 @@ defmodule OpenCL.Array do
   defdelegate push(array, number), to: Native, as: :array_push
 
   def extend(array, %Array{} = other) do
-    Native.array_extend_from_array(array, other)
+    case Native.array_extend_from_array(array, other) do
+      {:ok, {}} -> :ok
+      {} -> :ok
+      err -> err
+    end
   end
 
   def extend(array, numbers) when is_list(numbers) do
-    Native.array_extend_from_list(array, numbers)
+    case Native.array_extend_from_list(array, numbers) do
+      {:ok, {}} -> :ok
+      {} -> :ok
+      err -> err
+    end
   end
 
   defdelegate type(array), to: Native, as: :array_number_type

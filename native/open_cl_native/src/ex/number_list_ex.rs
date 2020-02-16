@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 
 use rustler::NifUntaggedEnum;
 
-use crate::{NumberEx, NumberType, NumberTyped, OutputEx}; //, CastNumber};
+use crate::{NumberEx, NumberType, NumberTyped, OutputEx, CastNumber, NumEx};
 use NumberType as NT;
 
 #[derive(Debug)]
@@ -12,6 +12,23 @@ pub struct RuntimeNumberList {
     _len: usize,
     _capacity: usize,
     _ptr: *mut libc::c_void,
+}
+
+fn _cast_to_type<T: NumberEx + Into<NumEx>>(rt_list: &RuntimeNumberList, other_type: NumberType) -> RuntimeNumberList {
+    let v1: Vec<T> = unsafe { rt_list.borrow_vec() };
+    let v2: Vec<NumEx> = v1.iter().map(|num| (*num).into()).collect();
+    std::mem::forget(v1);
+    apply_number_type!(other_type, cast_vec_to_rt_list, [v2])
+}
+
+fn cast_vec_to_rt_list<T: NumberEx + From<NumEx>>(data: Vec<NumEx>) -> RuntimeNumberList {
+    RuntimeNumberList::from_vec(data.iter().map(|num| From::from(*num)).collect::<Vec<T>>())
+}
+
+impl CastNumber for RuntimeNumberList {
+    fn cast_number(&self, number_type: NumberType) -> RuntimeNumberList {
+        apply_number_type!(self._number_type, _cast_to_type, [self, number_type])
+    }
 }
 
 impl RuntimeNumberList {
@@ -45,6 +62,7 @@ impl RuntimeNumberList {
     }
 
     pub fn extend_from_slice<N: NumberEx>(&mut self, other: &[N]) {
+        assert!(!std::ptr::eq(self._ptr as *const N, other.as_ptr()));
         unsafe {
             let mut data: Vec<N> = self.borrow_vec();
             data.extend_from_slice(other);
@@ -57,9 +75,16 @@ impl RuntimeNumberList {
         Vec::from_raw_parts(self._ptr as *mut N, self._len, self._capacity)
     }
 
-    pub unsafe fn update_from_borrowed<N: NumberEx>(&mut self, data: Vec<N>) {
+    unsafe fn update_from_borrowed<N: NumberEx>(&mut self, mut data: Vec<N>) {
         assert_eq!(N::number_type_of(), self._number_type);
-        assert!(std::ptr::eq(self._ptr as *const N, data.as_ptr()));
+        // assert!(
+        //     std::ptr::eq(self._ptr as *const N, data.as_ptr()),
+        //     "update_from_borrowed for number_type {:?} encountered invalid pointers {:?} did not match {:?}",
+        //     N::number_type_of(),
+        //     self._ptr as *const N,
+        //     data.as_ptr()
+        // );
+        self._ptr = data.as_mut_ptr() as *mut libc::c_void;
         self._len = data.len();
         self._capacity = data.capacity();
         std::mem::forget(data);
@@ -77,6 +102,16 @@ impl RuntimeNumberList {
 
     unsafe fn unchecked_as_slice_mut<N: NumberEx>(&mut self) -> &mut [N] {
         std::slice::from_raw_parts_mut(self._ptr as *mut N, self._len)
+    }
+
+    pub fn force_cloned_vec<N: NumberEx>(&self) -> Vec<N> {
+        assert_eq!(N::number_type_of(), self._number_type);
+        unsafe {
+            let borrowed = self.borrow_vec();
+            let cloned: Vec<N> = borrowed.clone();
+            std::mem::forget(borrowed);
+            cloned
+        } 
     }
 
     pub fn force_to_vec<N: NumberEx>(self) -> Vec<N> {

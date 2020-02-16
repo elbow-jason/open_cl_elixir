@@ -1,6 +1,6 @@
 use opencl_core::ll::CommandQueueProperties;
 
-use rustler::{Encoder, NifUnitEnum};
+use rustler::{NifUnitEnum};
 
 #[derive(NifUnitEnum)]
 pub enum CommandQueuePropEx {
@@ -24,7 +24,7 @@ impl CommandQueuePropEx {
     pub fn vec_into_cl_type(props: Vec<CommandQueuePropEx>) -> CommandQueueProperties {
         let mut cl_p = CommandQueueProperties::default();
         for p in props {
-            cl_p | CommandQueuePropEx::into_cl_type(p);
+            cl_p |= CommandQueuePropEx::into_cl_type(p);
         }
         cl_p
     }
