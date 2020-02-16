@@ -1,32 +1,25 @@
-# defmodule OpenCL.SessionTest do
-#   use ExUnit.Case
-#   use OpenCL.SessionsCase
+defmodule OpenCL.SessionTest do
+  use ExUnit.Case
+  use OpenCL.SessionsCase
 
-#   alias OpenCL.Session
+  alias OpenCL.Session
+  alias OpenCL.Array
 
-#   @add_one_src """
-#   __kernel void test(__global int *i) {
-#     *i += 1;
-#   }
-#   """
+  test "session concurrency", %{sessions: sessions} do
+     1..10
+      |> Enum.map(fn _ ->
+        Task.async(fn ->
+          work_dims = 1000
+          array = Array.filled_with(:u8, 0, work_dims)
+          Enum.each(sessions, fn session ->
+            assert {:ok, buffer} = Session.create_buffer(session, :u8, array)
+            Enum.each(1..10, fn _ ->
+              :ok = Session.execute_kernel(session, "add_one_i32", work_dims, [buffer])
+            end)
+          end)
+        end)
+      end)
+      |> Enum.map(fn task -> Task.await(task) end)
+  end
 
-#   test "src" do
-#     assert is_binary(@add_one_src) == true
-#   end
-
-#   test "session concurrency", %{sessions: sessions} do
-#      1..1000
-#       |> Enum.map(fn _ ->
-#         Task.async(fn ->
-#           Enum.each(sessions, fn sess ->
-#             Enum.each(1..100, fn _ ->
-#               Session.device_name(sess)
-#               # :ok = Session.kernel_execute_sync(session, kernel_name, work_dims, [buffer])
-#             end)
-#           end)
-#         end)
-#       end)
-#       |> Enum.map(fn task -> Task.await(task) end)
-#   end
-
-# end
+end

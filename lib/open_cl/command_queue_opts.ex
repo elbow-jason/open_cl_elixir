@@ -1,17 +1,19 @@
 defmodule OpenCL.CommandQueueOpts do
   alias OpenCL.CommandQueueOpts
 
-  @type native :: nil | %{
-    is_blocking: boolean() | nil,
-    offset: non_neg_integer() | nil,
-  }
+  @type native ::
+          nil
+          | %{
+              is_blocking: boolean() | nil,
+              offset: non_neg_integer() | nil
+            }
 
   defstruct is_blocking: nil, offset: nil
 
   def build(opts) do
     %CommandQueueOpts{
       is_blocking: Keyword.get(opts, :is_blocking),
-      offset: Keyword.get(opts, :offset),
+      offset: Keyword.get(opts, :offset)
     }
   end
 
@@ -27,7 +29,7 @@ defmodule OpenCL.CommandQueueOpts do
       nil -> []
       true -> []
       false -> []
-      _ ->  [is_blocking: "must be nil or boolean"]
+      _ -> [is_blocking: "must be nil or boolean"]
     end
   end
 

@@ -5,16 +5,18 @@ pub mod array_ex;
 pub mod dims_ex;
 pub mod error_ex;
 pub mod number_ex;
-pub mod wrapper_ex;
 pub mod number_list_ex;
+pub mod wrapper_ex;
 
 // OPENCL OBJECT WRAPPERS
 pub mod buffer_ex;
+pub mod command_queue_props_ex;
 pub mod device_ex;
 pub mod kernel_ex;
 pub mod platform_ex;
 pub mod session_ex;
 
+pub use command_queue_props_ex::CommandQueuePropEx;
 pub use device_ex::DeviceEx;
 pub use error_ex::{ErrorEx, OutputEx};
 pub use platform_ex::PlatformEx;

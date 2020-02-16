@@ -1,18 +1,21 @@
 use rustler::NifUntaggedEnum;
 
-use opencl_core::ll::{KernelArg, SizeAndPtr, ClNumber};
+use opencl_core::ll::{ClNumber, KernelArg, SizeAndPtr};
 
-use num_traits::{FromPrimitive, NumCast, ToPrimitive};
 use num_traits::identities::Zero;
+use num_traits::{FromPrimitive, NumCast, ToPrimitive};
 use std::fmt::Debug;
 
-use crate::{NumberType, NumberTypedT, NumberTyped};
+use crate::{NumberType, NumberTyped, NumberTypedT};
 
 pub trait CastNumber {
     fn cast_number(&self, number_type: NumberType) -> Self;
 }
 
-pub trait NumberEx: ClNumber + NumberTypedT + NumCast + ToPrimitive + FromPrimitive + Zero + From<NumEx> + KernelArg {}
+pub trait NumberEx:
+    ClNumber + NumberTypedT + NumCast + ToPrimitive + FromPrimitive + Zero + From<NumEx> + KernelArg
+{
+}
 
 impl NumberEx for u8 {}
 impl NumberEx for i8 {}
@@ -30,8 +33,6 @@ impl NumberEx for isize {}
 // #[derive(NifRecord)]
 // #[tag = "global_work_size"]
 // pub struct GlobalWorkSize(pub DimsEx);
-
-
 
 #[derive(NifUntaggedEnum, Debug, Clone, Copy)]
 pub enum NumEx {
@@ -453,4 +454,3 @@ impl_number_typed_for_vec!(isize, Isize);
 // impl_from_for_vec!(f64);
 // impl_from_for_vec!(usize);
 // impl_from_for_vec!(isize);
-

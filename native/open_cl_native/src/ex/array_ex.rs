@@ -6,8 +6,8 @@ use rustler::types::atom::Atom;
 use rustler::{Encoder, NifStruct};
 
 use crate::{
-    atoms, CastNumber, NumEx, NumberType, NumberTyped,
-    NumberListEx, OutputEx, RuntimeNumberList, NumberEx
+    atoms, CastNumber, NumEx, NumberEx, NumberListEx, NumberType, NumberTyped, OutputEx,
+    RuntimeNumberList,
 };
 
 #[derive(Debug)]
@@ -32,7 +32,6 @@ impl From<Array> for NumberListEx {
         NumberListEx::from(a.into_inner())
     }
 }
-
 
 unsafe impl Send for Array {}
 unsafe impl Sync for Array {}
@@ -127,12 +126,11 @@ impl From<RuntimeNumberList> for ArrayEx {
 
 impl From<Array> for ArrayEx {
     fn from(arr: Array) -> ArrayEx {
-        ArrayEx{
-            __native__: ResourceArc::new(arr)
+        ArrayEx {
+            __native__: ResourceArc::new(arr),
         }
     }
 }
-
 
 impl NumberTyped for ArrayEx {
     fn number_type(&self) -> NumberType {
@@ -151,9 +149,6 @@ impl NumberTyped for ArrayEx {
 // #[derive(NifRecord)]
 // #[tag = "i8"]
 // pub struct i8(pub i8);
-
-
-
 
 // impl CastNumber for ArrayEx {
 //     fn cast_number(&self, number_type: NumberType) -> ArrayEx {
@@ -239,8 +234,12 @@ fn array_extend_from_array(array: ArrayEx, other: ArrayEx) -> Atom {
         NumberType::U64 => self_rt_list.extend_from_slice::<u64>(other_rt_list.force_as_slice()),
         NumberType::I64 => self_rt_list.extend_from_slice::<i64>(other_rt_list.force_as_slice()),
         NumberType::F64 => self_rt_list.extend_from_slice::<f64>(other_rt_list.force_as_slice()),
-        NumberType::Usize => self_rt_list.extend_from_slice::<usize>(other_rt_list.force_as_slice()),
-        NumberType::Isize => self_rt_list.extend_from_slice::<isize>(other_rt_list.force_as_slice()),
+        NumberType::Usize => {
+            self_rt_list.extend_from_slice::<usize>(other_rt_list.force_as_slice())
+        }
+        NumberType::Isize => {
+            self_rt_list.extend_from_slice::<isize>(other_rt_list.force_as_slice())
+        }
     }
     atoms::ok()
 }

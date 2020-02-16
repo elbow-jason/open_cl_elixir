@@ -139,29 +139,18 @@ macro_rules! apply_number_type {
     }
 }
 
-
-
 #[macro_export]
 macro_rules! type_check {
-    ($t1:ty, $t2:ty) => {
-        {
-            $t1::number_type_of().type_check($t2::number_type_of())
-        }
-    };
-    ($t1:ty, $t2:ident) => {
-        {
-            $t1::number_type_of().type_check($t2.number_type())
-        }
-    };
-    ($t1:ident, $t2:ty) => {
-        {
-            $t1.number_type().type_check($t2::number_type_of())
-        }
-    };
-    ($t1:ident, $t2:ident) => {
-        {
-            $t1::number_type().type_check($t2.number_type())
-        }
-    };
+    ($t1:ty, $t2:ty) => {{
+        $t1::number_type_of().type_check($t2::number_type_of())
+    }};
+    ($t1:ty, $t2:ident) => {{
+        $t1::number_type_of().type_check($t2.number_type())
+    }};
+    ($t1:ident, $t2:ty) => {{
+        $t1.number_type().type_check($t2::number_type_of())
+    }};
+    ($t1:ident, $t2:ident) => {{
+        $t1::number_type().type_check($t2.number_type())
+    }};
 }
-

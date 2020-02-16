@@ -1,14 +1,13 @@
+use opencl_core::ClNumber;
 
-use opencl_core::{ClNumber};
+use rustler::NifUnitEnum;
 
-use rustler::{NifUnitEnum};
-
-use crate::{OutputEx};
+use crate::OutputEx;
 
 #[derive(Debug, Fail, PartialEq, Eq, Clone)]
 pub enum NumberTypeError {
     #[fail(display = "Number Type Mismatch - {:?} vs {:?}", _0, _1)]
-    TypeMismatch(NumberType, NumberType)
+    TypeMismatch(NumberType, NumberType),
 }
 
 #[derive(NifUnitEnum, Debug, PartialEq, Eq, Clone, Copy)]
@@ -30,7 +29,7 @@ pub enum NumberType {
 impl NumberType {
     pub fn type_check(&self, t: NumberType) -> OutputEx<NumberType> {
         if *self != t {
-            return Err((*self).mismatch_error(t).into()) 
+            return Err((*self).mismatch_error(t).into());
         }
         Ok(t)
     }
@@ -39,7 +38,11 @@ impl NumberType {
         NumberTypeError::TypeMismatch(self, t)
     }
 
-    pub fn cast<F, T>(&self, f: F) -> Option<T> where F: FnOnce() -> T, T: ClNumber + NumberTypedT{
+    pub fn cast<F, T>(&self, f: F) -> Option<T>
+    where
+        F: FnOnce() -> T,
+        T: ClNumber + NumberTypedT,
+    {
         if T::number_type_of() == *self {
             Some(f())
         } else {
@@ -49,7 +52,7 @@ impl NumberType {
 
     pub fn size_of(&self) -> usize {
         use std::mem::size_of;
-        match self {    
+        match self {
             NumberType::U8 => size_of::<u8>(),
             NumberType::I8 => size_of::<i8>(),
             NumberType::U16 => size_of::<u16>(),
@@ -64,25 +67,28 @@ impl NumberType {
             NumberType::Isize => size_of::<isize>(),
         }
     }
-
-    
 }
 
 pub trait NumberTyped {
     fn number_type(&self) -> NumberType;
 
-    fn matches_t<T>(&self) -> bool where T: NumberTypedT {
+    fn matches_t<T>(&self) -> bool
+    where
+        T: NumberTypedT,
+    {
         self.number_type() == T::number_type_of()
     }
 
-    fn matches<T>(&self, other: &T) -> bool where T: NumberTyped {
+    fn matches<T>(&self, other: &T) -> bool
+    where
+        T: NumberTyped,
+    {
         self.number_type() == other.number_type()
     }
 
     fn type_check(&self, t: NumberType) -> OutputEx<NumberType> {
         self.number_type().type_check(t)
     }
-
 }
 
 pub trait NumberTypedT {
@@ -121,5 +127,3 @@ impl NumberTyped for NumberType {
         *self
     }
 }
-
-

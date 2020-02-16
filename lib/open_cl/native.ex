@@ -7,6 +7,7 @@ defmodule OpenCL.Native do
   alias OpenCL.Buffer
   alias OpenCL.MemConfig
   alias OpenCL.KernelOp
+  alias OpenCL.CommandQueueProps
 
   import OpenCL.NifNotLoadedError, only: [err: 0]
 
@@ -288,14 +289,18 @@ defmodule OpenCL.Native do
   #   # @spec command_queue_self_reference_count(CommandQueue.t()) :: output(non_neg_integer())
   #   # def command_queue_self_reference_count(_command_queue), do: err()
 
-  @spec session_create_with_devices([Device.t()], String.t()) :: output(Session.t())
-  def session_create_with_devices(_devices, _src), do: err()
+  @spec session_create_with_devices([Device.t()], String.t(), CommandQueueProps.t()) ::
+          output(Session.t())
+  def session_create_with_devices(_devices, _src, _props), do: err()
 
-  @spec session_create(String.t()) :: output(Session.t())
-  def session_create(_src), do: err()
+  @spec session_create(String.t(), CommandQueueProps.t()) :: output(Session.t())
+  def session_create(_src, _props), do: err()
 
-  @spec session_self_devices(Session.t()) :: [Device.t()]
-  def session_self_devices(_session), do: err()
+  @spec session_self_create_copy(Session.t()) :: output(Session.t())
+  def session_self_create_copy(_session), do: err()
+
+  @spec session_self_device(Session.t()) :: [Device.t()]
+  def session_self_device(_session), do: err()
 
   @type data :: Array.t() | list(number_type())
 
@@ -305,16 +310,21 @@ defmodule OpenCL.Native do
           output(Buffer.t())
   def session_self_create_buffer(_session, _type, _len_or_data, _config), do: err()
 
-  @spec session_self_write_array_to_buffer(Session.t(), non_neg_integer(), Buffer.t(), Array.t(), CommandQueueOpts.native()) ::
-    output({})
-  def session_self_write_array_to_buffer(_session, _queue_index, _buffer, _array, _cq_opts), do: err()
+  @spec session_self_write_array_to_buffer(
+          Session.t(),
+          Buffer.t(),
+          Array.t(),
+          CommandQueueOpts.native()
+        ) ::
+          output({})
+  def session_self_write_array_to_buffer(_session, _buffer, _array, _cq_opts), do: err()
 
-  @spec session_self_read_buffer(Session.t(), non_neg_integer(), Buffer.t(), CommandQueueOpts.native()) ::
-    output(Array.t())
-  def session_self_read_buffer(_session, _queue_index, _buffer, _cq_opts), do: err()
+  @spec session_self_read_buffer(Session.t(), Buffer.t(), CommandQueueOpts.native()) ::
+          output(Array.t())
+  def session_self_read_buffer(_session, _buffer, _cq_opts), do: err()
 
-  @spec session_self_execute_kernel_operation(Session.t(), non_neg_integer(), KernelOp.t()) :: output(non_neg_integer() | Buffer.t())
-  def session_self_execute_kernel_operation(_session, _queue_index, _kernel_op), do: err()
+  @spec session_self_execute_kernel_operation(Session.t(), KernelOp.t()) :: output({})
+  def session_self_execute_kernel_operation(_session, _kernel_op), do: err()
 
   #   @spec session_self_device_name(Session.t()) :: output(String.t())
   #   def session_self_device_name(_session), do: err()
@@ -479,34 +489,33 @@ defmodule OpenCL.Native do
   #   @type dim :: non_neg_integer()
   #   @type(dims :: dim() | {dim()} | {dim(), dim()}, {dim(), dim(), dim()})
 
-    # ARRAY
-    @spec array_new(number_type(), [number(), ...]) :: Array.t()
-    def array_new(_number_type, _numbers), do: err()
+  # ARRAY
+  @spec array_new(number_type(), [number(), ...]) :: Array.t()
+  def array_new(_number_type, _numbers), do: err()
 
-    @spec array_new_filled_with(number_type(), number(), non_neg_integer()) :: Array.t()
-    def array_new_filled_with(_number_type, _number, _count), do: err()
+  @spec array_new_filled_with(number_type(), number(), non_neg_integer()) :: Array.t()
+  def array_new_filled_with(_number_type, _number, _count), do: err()
 
-    def array_data(_array), do: err()
+  def array_data(_array), do: err()
 
-    def array_length(_array), do: err()
+  def array_length(_array), do: err()
 
-    def array_push(_array, _number), do: err()
+  def array_push(_array, _number), do: err()
 
-    def array_extend_from_list(_array, _list_of_numbers), do: err()
+  def array_extend_from_list(_array, _list_of_numbers), do: err()
 
-    def array_extend_from_array(_array, _other), do: err()
+  def array_extend_from_array(_array, _other), do: err()
 
-    def array_number_type(_array), do: err()
+  def array_number_type(_array), do: err()
 
-    def array_cast(_array, _number_type), do: err()
+  def array_cast(_array, _number_type), do: err()
 
   #   @type buffer_access :: :read_only | :write_only | :read_write
 
   #   def buffer_build_from_array(_session, _dims, _number_type, _array, _access), do: err()
 
-    def buffer_length(_buffer), do: err()
+  def buffer_length(_buffer), do: err()
 
   #   def buffer_reference_count(_buffer), do: err()
 
-  #   def kernel_execute_sync(_session, _name, _dims, _args), do: err()
 end

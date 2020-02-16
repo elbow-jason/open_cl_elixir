@@ -1,11 +1,13 @@
 defmodule OpenCL.MemConfig do
   alias OpenCL.MemConfig
 
-  @type native :: nil | %{
-    kernel_access: kernel_access | nil,
-    host_access: host_access | nil,
-    mem_location: mem_location | nil,
-  }
+  @type native ::
+          nil
+          | %{
+              kernel_access: kernel_access | nil,
+              host_access: host_access | nil,
+              mem_location: mem_location | nil
+            }
 
   defstruct kernel_access: nil,
             host_access: nil,
@@ -48,7 +50,6 @@ defmodule OpenCL.MemConfig do
 
   def to_native(%MemConfig{kernel_access: nil, host_access: nil, mem_location: nil}), do: nil
   def to_native(%MemConfig{} = cfg), do: Map.from_struct(cfg)
-
 
   def errors(%MemConfig{} = mc) do
     validate_field(mc, :kernel_access, @kernel_access) ++

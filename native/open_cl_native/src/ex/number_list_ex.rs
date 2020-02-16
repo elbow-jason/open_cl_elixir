@@ -1,8 +1,7 @@
-
 use std::marker::PhantomData;
 // use std::ptr::Unique;
 
-use rustler::{NifUntaggedEnum};
+use rustler::NifUntaggedEnum;
 
 use crate::{NumberEx, NumberType, NumberTyped, OutputEx}; //, CastNumber};
 use NumberType as NT;
@@ -111,7 +110,7 @@ impl RuntimeNumberList {
     }
 
     pub fn from_vec<N: NumberEx>(mut v: Vec<N>) -> RuntimeNumberList {
-        let rt_list = RuntimeNumberList{
+        let rt_list = RuntimeNumberList {
             _number_type: N::number_type_of(),
             _ptr: v.as_mut_ptr() as *mut libc::c_void,
             _len: v.len(),
@@ -127,7 +126,6 @@ impl NumberTyped for RuntimeNumberList {
         self._number_type
     }
 }
-
 
 impl<N: NumberEx> From<RuntimeNumberList> for NumberList<N> {
     fn from(rt_list: RuntimeNumberList) -> NumberList<N> {
@@ -165,57 +163,54 @@ impl Clone for RuntimeNumberList {
             NT::F64 => _clone_rt_list::<f64>(self),
             NT::Usize => _clone_rt_list::<usize>(self),
             NT::Isize => _clone_rt_list::<isize>(self),
-    
-        }
-    }    
-}
-
-
-impl Drop for RuntimeNumberList {
-    fn drop(&mut self) {
-        unsafe {    
-            match self._number_type {
-                NT::U8 => {
-                    self.borrow_vec::<u8>();
-                },
-                NT::I8 => {
-                    self.borrow_vec::<i8>();
-                },
-                NT::U16 => {
-                    self.borrow_vec::<u16>();
-                },
-                NT::I16 => {
-                    self.borrow_vec::<i16>();
-                },
-                NT::U32 => {
-                    self.borrow_vec::<u32>();
-                },
-                NT::I32 => {
-                    self.borrow_vec::<i32>();
-                },
-                NT::F32 => {
-                    self.borrow_vec::<f32>();
-                },
-                NT::U64 => {
-                    self.borrow_vec::<u64>();
-                },
-                NT::I64 => {
-                    self.borrow_vec::<i64>();
-                },
-                NT::F64 => {
-                    self.borrow_vec::<f64>();
-                },
-                NT::Usize => {
-                    self.borrow_vec::<usize>();
-                },
-                NT::Isize => {
-                    self.borrow_vec::<isize>();
-                },
-            }
         }
     }
 }
 
+impl Drop for RuntimeNumberList {
+    fn drop(&mut self) {
+        unsafe {
+            match self._number_type {
+                NT::U8 => {
+                    self.borrow_vec::<u8>();
+                }
+                NT::I8 => {
+                    self.borrow_vec::<i8>();
+                }
+                NT::U16 => {
+                    self.borrow_vec::<u16>();
+                }
+                NT::I16 => {
+                    self.borrow_vec::<i16>();
+                }
+                NT::U32 => {
+                    self.borrow_vec::<u32>();
+                }
+                NT::I32 => {
+                    self.borrow_vec::<i32>();
+                }
+                NT::F32 => {
+                    self.borrow_vec::<f32>();
+                }
+                NT::U64 => {
+                    self.borrow_vec::<u64>();
+                }
+                NT::I64 => {
+                    self.borrow_vec::<i64>();
+                }
+                NT::F64 => {
+                    self.borrow_vec::<f64>();
+                }
+                NT::Usize => {
+                    self.borrow_vec::<usize>();
+                }
+                NT::Isize => {
+                    self.borrow_vec::<isize>();
+                }
+            }
+        }
+    }
+}
 
 struct NumberList<N: NumberEx> {
     _rt_list: RuntimeNumberList,
@@ -244,7 +239,7 @@ impl<N: NumberEx> NumberList<N> {
     }
 
     pub fn from_vec(mut v: Vec<N>) -> NumberList<N> {
-        let rt_list = RuntimeNumberList{
+        let rt_list = RuntimeNumberList {
             _number_type: N::number_type_of(),
             _ptr: v.as_mut_ptr() as *mut libc::c_void,
             _len: v.len(),
@@ -401,8 +396,6 @@ impl From<RuntimeNumberList> for NumberListEx {
 //     std::slice::from_raw_parts(slc.as_ptr() as *const U, slc.len())
 // }
 
-
-
 // impl<T: ClNumber + NumberTypedT> From<Vec<T>> for NumberListEx {
 //     fn from(data: Vec<T>) -> NumberListEx {
 //         use NumberListEx as L;
@@ -450,7 +443,6 @@ impl From<RuntimeNumberList> for NumberListEx {
 //     }
 // }
 
-
 // impl NumberListEx {
 //     fn cast_into_vec<T: NumberTypedT + NumCast + ClNumber>(&self) -> Vec<T> {
 //         use NumberListEx as L;
@@ -470,10 +462,10 @@ impl From<RuntimeNumberList> for NumberListEx {
 //                 L::F64(v) => v.iter().map(|num| NumCast::from(*num).unwrap()).collect(),
 //                 L::Usize(v) => v.iter().map(|num| NumCast::from(*num).unwrap()).collect(),
 //                 L::Isize(v) => v.iter().map(|num| NumCast::from(*num).unwrap()).collect(),
-//             }    
+//             }
 //         }
 //     }
-// } 
+// }
 
 // impl<T: NumberEx> From<Vec<T>> for NumberListEx {
 //     fn from(v: Vec<T>) -> NumberListEx {
@@ -510,7 +502,6 @@ impl From<RuntimeNumberList> for NumberListEx {
 //     std::mem::forget(vec_of_t);
 //     vec_of_u
 // }
-
 
 // #[inline]
 // fn convert_to_vec<T: ToPrimitive, U: NumCast>(data: &[T]) -> Vec<U> {
