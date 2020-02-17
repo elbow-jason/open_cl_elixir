@@ -175,7 +175,8 @@ rustler::init! {
         array_ex::array_cast,
 
         // DEVICE_BUFFER
-        buffer_ex::buffer_length,
+        buffer_ex::buffer_self_length,
+        buffer_ex::buffer_self_number_type,
         // device_buffer_ex::buffer_to_array,
         // device_buffer_ex::buffer_reference_count,
 

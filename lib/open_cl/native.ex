@@ -514,7 +514,9 @@ defmodule OpenCL.Native do
 
   #   def buffer_build_from_array(_session, _dims, _number_type, _array, _access), do: err()
 
-  def buffer_length(_buffer), do: err()
+  def buffer_self_length(_buffer), do: err()
+
+  def buffer_self_number_type(_buffer), do: err()
 
   #   def buffer_reference_count(_buffer), do: err()
 

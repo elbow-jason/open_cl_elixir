@@ -11,11 +11,9 @@ defmodule OpenCL.BugRegressionTest do
     for session <- sessions do
       count = 500
       array = Array.filled_with(:u8, 0, count)
-      assert {:ok, buffer} = Session.create_buffer(session, :u8, array)
-
       with_concurrency 10 do
-        assert {:ok, session} = Session.create_copy(session)
         n_times 200 do
+          assert {:ok, buffer} = Session.create_buffer(session, :u8, array)
           :ok = Session.execute_kernel(session, "add_one_u8", count, [buffer])
           {:ok, array2} = Session.read_buffer(session, buffer)
           Array.to_list(array2)
@@ -43,7 +41,6 @@ defmodule OpenCL.BugRegressionTest do
   test "6_JAN_2020 - A calling kernels is concurrency-safe", %{sessions: sessions} do
     for session <- sessions do
       with_concurrency 10 do
-        assert {:ok, session} = Session.create_copy(session)
         n_times 10 do
           arr = Array.new(:u8, [1])
           assert {:ok, buffer} = Session.create_buffer(session, :u8, arr)

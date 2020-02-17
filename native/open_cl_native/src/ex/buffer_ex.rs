@@ -362,8 +362,13 @@ fn _buffer_len<T: NumberEx>(buff: &BufferWrapper) -> OutputEx<usize> {
     buff.len::<T>()
 }
 
-#[rustler::nif]
-pub fn buffer_length(buffer: BufferEx) -> OutputEx<usize> {
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn buffer_self_length(buffer: BufferEx) -> OutputEx<usize> {
     let w = buffer.wrapper();
     apply_number_type!(w.t, _buffer_len, [w])
+}
+
+#[rustler::nif]
+pub fn buffer_self_number_type(buffer: BufferEx) -> NumberType {
+    buffer.number_type()
 }
