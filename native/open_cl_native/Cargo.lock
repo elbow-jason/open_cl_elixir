@@ -372,6 +372,54 @@ dependencies = [
 ]
 
 [[package]]
+name = "open-cl-core"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "bitflags 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "chrono 0.4.10 (registry+https://github.com/rust-lang/crates.io-index)",
+ "colored 1.9.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "env_logger 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "failure 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.66 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "num 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "open-cl-low-level 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "open-cl-sys 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "paste 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "open-cl-low-level"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "bitflags 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "chrono 0.4.10 (registry+https://github.com/rust-lang/crates.io-index)",
+ "colored 1.9.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "env_logger 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "failure 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.66 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "num 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "num-complex 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "num-traits 0.2.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "open-cl-sys 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "paste 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "open-cl-sys"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "bindgen 0.51.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.66 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "open_cl_native"
 version = "0.1.0"
 dependencies = [
@@ -384,58 +432,10 @@ dependencies = [
  "num 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-complex 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-traits 0.2.11 (registry+https://github.com/rust-lang/crates.io-index)",
- "opencl-core 0.1.0 (git+https://github.com/elbow-jason/open_cl_rust?rev=f723414)",
+ "open-cl-core 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "paste 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustler 0.21.0 (git+https://github.com/elbow-jason/rustler?branch=add-return-term-to-error)",
  "serde_rustler 0.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "opencl-core"
-version = "0.1.0"
-source = "git+https://github.com/elbow-jason/open_cl_rust?rev=f723414#f7234146d661f931d74cf7f95aa4c16add046d1a"
-dependencies = [
- "bitflags 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "chrono 0.4.10 (registry+https://github.com/rust-lang/crates.io-index)",
- "colored 1.9.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "env_logger 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "failure 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.66 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "num 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "opencl-low-level 0.1.0 (git+https://github.com/elbow-jason/open_cl_rust?rev=f723414)",
- "opencl-sys 0.1.0 (git+https://github.com/elbow-jason/open_cl_rust?rev=f723414)",
- "paste 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "opencl-low-level"
-version = "0.1.0"
-source = "git+https://github.com/elbow-jason/open_cl_rust?rev=f723414#f7234146d661f931d74cf7f95aa4c16add046d1a"
-dependencies = [
- "bitflags 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "chrono 0.4.10 (registry+https://github.com/rust-lang/crates.io-index)",
- "colored 1.9.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "env_logger 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "failure 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.66 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "num 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "num-complex 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "num-traits 0.2.11 (registry+https://github.com/rust-lang/crates.io-index)",
- "opencl-sys 0.1.0 (git+https://github.com/elbow-jason/open_cl_rust?rev=f723414)",
- "paste 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "opencl-sys"
-version = "0.1.0"
-source = "git+https://github.com/elbow-jason/open_cl_rust?rev=f723414#f7234146d661f931d74cf7f95aa4c16add046d1a"
-dependencies = [
- "bindgen 0.51.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.66 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -831,9 +831,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum num-iter 0.1.40 (registry+https://github.com/rust-lang/crates.io-index)" = "dfb0800a0291891dd9f4fe7bd9c19384f98f7fbe0cd0f39a2c6b88b9868bbc00"
 "checksum num-rational 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "da4dc79f9e6c81bef96148c8f6b8e72ad4541caa4a24373e900a36da07de03a3"
 "checksum num-traits 0.2.11 (registry+https://github.com/rust-lang/crates.io-index)" = "c62be47e61d1842b9170f0fdeec8eba98e60e90e5446449a0545e5152acd7096"
-"checksum opencl-core 0.1.0 (git+https://github.com/elbow-jason/open_cl_rust?rev=f723414)" = "<none>"
-"checksum opencl-low-level 0.1.0 (git+https://github.com/elbow-jason/open_cl_rust?rev=f723414)" = "<none>"
-"checksum opencl-sys 0.1.0 (git+https://github.com/elbow-jason/open_cl_rust?rev=f723414)" = "<none>"
+"checksum open-cl-core 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "3532b2d4d0b63bdac38bb574fbe58549c69d9ed35ef6f7310b7e06c0d81c9501"
+"checksum open-cl-low-level 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "1ea0fcdff1d5ac5cc6bdd643045be6b779f4adf955c821d6713c3fbb53f8dee7"
+"checksum open-cl-sys 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "04607c471b50e137755e9bf56db446b34d54d2b88c253d7de079f20d5ac863e6"
 "checksum paste 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)" = "423a519e1c6e828f1e73b720f9d9ed2fa643dce8a7737fb43235ce0b41eeaa49"
 "checksum paste-impl 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)" = "4214c9e912ef61bf42b81ba9a47e8aad1b2ffaf739ab162bf96d1e011f54e6c5"
 "checksum peeking_take_while 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "19b17cddbe7ec3f8bc800887bab5e717348c95ea2ca0b1bf0837fb964dc67099"
