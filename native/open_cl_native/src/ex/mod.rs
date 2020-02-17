@@ -7,6 +7,7 @@ pub mod error_ex;
 pub mod number_ex;
 pub mod number_list_ex;
 pub mod wrapper_ex;
+pub mod convert;
 
 // OPENCL OBJECT WRAPPERS
 pub mod buffer_ex;

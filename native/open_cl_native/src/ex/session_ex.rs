@@ -2,7 +2,7 @@ use std::fmt;
 
 use opencl_core::ll::utils;
 use opencl_core::{
-    Buffer, ClNumber, CommandQueueOptions, CommandQueueProperties, Device, MemConfig, Session,
+    Buffer, CommandQueueOptions, CommandQueueProperties, Device, MemConfig, Session,
 };
 // use opencl_core::ll::{DevicePtr};
 use rustler::resource::ResourceArc;
@@ -14,8 +14,7 @@ use crate::traits::NativeWrapper;
 
 use crate::{
     ArrayEx, BufferCreatorEx, BufferEx, CommandQueueOptionsEx, CommandQueuePropEx, DeviceEx,
-    KernelOpEx, MemConfigEx, NumberEx, NumberListEx, NumberType, NumberTyped, NumberTypedT,
-    RuntimeNumberList,
+    KernelOpEx, MemConfigEx, NumberEx, NumberType, NumberTyped, RuntimeNumberList, NumberListEx,
 };
 
 impl WrapperExResource for Session {}
@@ -129,11 +128,15 @@ pub fn session_self_create_buffer(
 
     let mem_config = build_mem_config(config, &creator_ex);
     match creator_ex {
-        BufferCreatorEx::List(list) => create_buffer_from_list(&session, list, mem_config),
-        BufferCreatorEx::Array(arr) => create_buffer_from_array(&session, arr, mem_config),
+        BufferCreatorEx::List(list) => {
+            apply_number_type!(number_type, _create_buffer_from_list, [&session, list, mem_config])
+        },
+        BufferCreatorEx::Array(arr) => {
+            apply_number_type!(number_type, _create_buffer_from_array, [&session, arr, mem_config])
+        },
         BufferCreatorEx::Length(len) => {
-            create_buffer_from_len(&session, number_type, len, mem_config)
-        }
+            apply_number_type!(number_type, _create_buffer_from_len, [&session, len, mem_config])
+        },
     }
 }
 
@@ -144,31 +147,8 @@ fn build_mem_config(config: MemConfigEx, creator_ex: &BufferCreatorEx) -> MemCon
         .build()
 }
 
-fn create_buffer_from_len(
-    sess: &SessionEx,
-    nt: NumberType,
-    len: usize,
-    mem_config: MemConfig,
-) -> OutputEx<BufferEx> {
-    use NumberType as NT;
-    match nt.number_type() {
-        NT::U8 => _create_buffer_from_len::<u8>(sess, len, mem_config),
-        NT::I8 => _create_buffer_from_len::<i8>(sess, len, mem_config),
-        NT::U16 => _create_buffer_from_len::<u16>(sess, len, mem_config),
-        NT::I16 => _create_buffer_from_len::<i16>(sess, len, mem_config),
-        NT::U32 => _create_buffer_from_len::<u32>(sess, len, mem_config),
-        NT::I32 => _create_buffer_from_len::<i32>(sess, len, mem_config),
-        NT::F32 => _create_buffer_from_len::<f32>(sess, len, mem_config),
-        NT::U64 => _create_buffer_from_len::<u64>(sess, len, mem_config),
-        NT::I64 => _create_buffer_from_len::<i64>(sess, len, mem_config),
-        NT::F64 => _create_buffer_from_len::<f64>(sess, len, mem_config),
-        NT::Usize => _create_buffer_from_len::<usize>(sess, len, mem_config),
-        NT::Isize => _create_buffer_from_len::<isize>(sess, len, mem_config),
-    }
-}
-
 #[inline]
-fn _create_buffer_from_len<T: ClNumber + NumberTypedT>(
+fn _create_buffer_from_len<T: NumberEx>(
     sess: &SessionEx,
     len: usize,
     mem_config: MemConfig,
@@ -190,49 +170,37 @@ fn _buffer_from_slice<T: NumberEx>(
         .map_err(From::from)
 }
 
-fn create_buffer_from_list(
+fn _create_buffer_from_list<T: NumberEx>(
     sess: &SessionEx,
     list: NumberListEx,
     mem_config: MemConfig,
 ) -> OutputEx<BufferEx> {
-    use NumberListEx as L;
-    match list {
-        L::U8(v) => _buffer_from_slice(sess, &v[..], mem_config),
-        L::I8(v) => _buffer_from_slice(sess, &v[..], mem_config),
-        L::U16(v) => _buffer_from_slice(sess, &v[..], mem_config),
-        L::I16(v) => _buffer_from_slice(sess, &v[..], mem_config),
-        L::U32(v) => _buffer_from_slice(sess, &v[..], mem_config),
-        L::I32(v) => _buffer_from_slice(sess, &v[..], mem_config),
-        L::F32(v) => _buffer_from_slice(sess, &v[..], mem_config),
-        L::U64(v) => _buffer_from_slice(sess, &v[..], mem_config),
-        L::I64(v) => _buffer_from_slice(sess, &v[..], mem_config),
-        L::F64(v) => _buffer_from_slice(sess, &v[..], mem_config),
-        L::Usize(v) => _buffer_from_slice(sess, &v[..], mem_config),
-        L::Isize(v) => _buffer_from_slice(sess, &v[..], mem_config),
-    }
+    let rt_list = RuntimeNumberList::from(list);
+    _buffer_from_slice::<T>(sess, rt_list.force_as_slice(), mem_config)
 }
 
-fn create_buffer_from_array(
+fn _create_buffer_from_array<T: NumberEx>(
     sess: &SessionEx,
     array: ArrayEx,
     mem_config: MemConfig,
 ) -> OutputEx<BufferEx> {
-    use NumberType as NT;
     let rt_list = array.read_lock();
-    match rt_list.number_type() {
-        NT::U8 => _buffer_from_slice(sess, rt_list.force_as_slice::<u8>(), mem_config),
-        NT::I8 => _buffer_from_slice(sess, rt_list.force_as_slice::<i8>(), mem_config),
-        NT::U16 => _buffer_from_slice(sess, rt_list.force_as_slice::<u16>(), mem_config),
-        NT::I16 => _buffer_from_slice(sess, rt_list.force_as_slice::<i16>(), mem_config),
-        NT::U32 => _buffer_from_slice(sess, rt_list.force_as_slice::<u32>(), mem_config),
-        NT::I32 => _buffer_from_slice(sess, rt_list.force_as_slice::<i32>(), mem_config),
-        NT::F32 => _buffer_from_slice(sess, rt_list.force_as_slice::<f32>(), mem_config),
-        NT::U64 => _buffer_from_slice(sess, rt_list.force_as_slice::<u64>(), mem_config),
-        NT::I64 => _buffer_from_slice(sess, rt_list.force_as_slice::<i64>(), mem_config),
-        NT::F64 => _buffer_from_slice(sess, rt_list.force_as_slice::<f64>(), mem_config),
-        NT::Usize => _buffer_from_slice(sess, rt_list.force_as_slice::<usize>(), mem_config),
-        NT::Isize => _buffer_from_slice(sess, rt_list.force_as_slice::<isize>(), mem_config),
-    }
+    _buffer_from_slice(sess, rt_list.force_as_slice::<T>(), mem_config)
+    
+    // match rt_list.number_type() {
+    //     NT::U8 => _buffer_from_slice(sess, rt_list.force_as_slice::<u8>(), mem_config),
+    //     NT::I8 => _buffer_from_slice(sess, rt_list.force_as_slice::<i8>(), mem_config),
+    //     NT::U16 => _buffer_from_slice(sess, rt_list.force_as_slice::<u16>(), mem_config),
+    //     NT::I16 => _buffer_from_slice(sess, rt_list.force_as_slice::<i16>(), mem_config),
+    //     NT::U32 => _buffer_from_slice(sess, rt_list.force_as_slice::<u32>(), mem_config),
+    //     NT::I32 => _buffer_from_slice(sess, rt_list.force_as_slice::<i32>(), mem_config),
+    //     NT::F32 => _buffer_from_slice(sess, rt_list.force_as_slice::<f32>(), mem_config),
+    //     NT::U64 => _buffer_from_slice(sess, rt_list.force_as_slice::<u64>(), mem_config),
+    //     NT::I64 => _buffer_from_slice(sess, rt_list.force_as_slice::<i64>(), mem_config),
+    //     NT::F64 => _buffer_from_slice(sess, rt_list.force_as_slice::<f64>(), mem_config),
+    //     NT::Usize => _buffer_from_slice(sess, rt_list.force_as_slice::<usize>(), mem_config),
+    //     NT::Isize => _buffer_from_slice(sess, rt_list.force_as_slice::<isize>(), mem_config),
+    // }
 }
 
 fn _sync_write_buffer<T: NumberEx>(

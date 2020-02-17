@@ -7,7 +7,11 @@ use rustler::{Encoder, NifStruct, Error, ListIterator, Decoder};
 
 use crate::{
     atoms, CastNumber, NumEx, NumberEx, NumberListEx, NumberType, NumberTyped, OutputEx,
-    RuntimeNumberList,
+    RuntimeNumberList, 
+};
+use crate::convert::{
+    list_iterator_to_vec,
+    list_iterator_to_rt_list,
 };
 
 #[derive(Debug)]
@@ -18,18 +22,6 @@ pub struct Array {
 impl NumberTyped for Array {
     fn number_type(&self) -> NumberType {
         self.read_lock().number_type()
-    }
-}
-
-impl From<NumberListEx> for Array {
-    fn from(nums: NumberListEx) -> Array {
-        Array::new(RuntimeNumberList::from(nums))
-    }
-}
-
-impl From<Array> for NumberListEx {
-    fn from(a: Array) -> NumberListEx {
-        NumberListEx::from(a.into_inner())
     }
 }
 
@@ -157,18 +149,18 @@ impl CastNumber for ArrayEx {
     }
 }
 
-fn _list_iterator_to_vec<'a, T: NumberEx + Decoder<'a>>(iter: ListIterator<'a>) -> Result<Vec<T>, Error> {
-    iter.map(|x| x.decode::<T>()).collect()
-}
+// fn _list_iterator_to_vec<'a, T: NumberEx + Decoder<'a>>(iter: ListIterator<'a>) -> Result<Vec<T>, Error> {
+//     iter.map(|x| x.decode::<T>()).collect()
+// }
 
-fn _list_iterator_to_rt_list<'a, T: NumberEx + Decoder<'a>>(iter: ListIterator<'a>) -> Result<RuntimeNumberList, Error> {
-    let data: Vec<T> = _list_iterator_to_vec(iter)?;
-    Ok(RuntimeNumberList::from_vec(data))
-}
+// fn _list_iterator_to_rt_list<'a, T: NumberEx + Decoder<'a>>(iter: ListIterator<'a>) -> Result<RuntimeNumberList, Error> {
+//     let data: Vec<T> = _list_iterator_to_vec(iter)?;
+//     Ok(RuntimeNumberList::from_vec(data))
+// }
 
 #[rustler::nif]
 fn array_new<'a>(number_type: NumberType, iter: ListIterator<'a>) -> Result<ArrayEx, Error> {
-    let rt_list = apply_number_type!(number_type, _list_iterator_to_rt_list, [iter])?;
+    let rt_list = apply_number_type!(number_type, list_iterator_to_rt_list, [iter])?;
     Ok(ArrayEx::from(rt_list))
 }
 
@@ -196,7 +188,7 @@ fn array_length(array: ArrayEx) -> usize {
 }
 
 fn _extend_rt_with_list_iterator<'a, T: NumberEx + Decoder<'a>>(rt_list: &mut RuntimeNumberList, iter: ListIterator<'a>) -> Result<(), Error> {
-    let other = _list_iterator_to_vec::<T>(iter)?;
+    let other = list_iterator_to_vec::<T>(iter)?;
     Ok(_extend_rt_list_with_slice(rt_list, &other[..]))
 }
 

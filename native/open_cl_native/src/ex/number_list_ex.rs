@@ -1,5 +1,3 @@
-use std::marker::PhantomData;
-// use std::ptr::Unique;
 
 use rustler::NifUntaggedEnum;
 
@@ -77,13 +75,6 @@ impl RuntimeNumberList {
 
     unsafe fn update_from_borrowed<N: NumberEx>(&mut self, mut data: Vec<N>) {
         assert_eq!(N::number_type_of(), self._number_type);
-        // assert!(
-        //     std::ptr::eq(self._ptr as *const N, data.as_ptr()),
-        //     "update_from_borrowed for number_type {:?} encountered invalid pointers {:?} did not match {:?}",
-        //     N::number_type_of(),
-        //     self._ptr as *const N,
-        //     data.as_ptr()
-        // );
         self._ptr = data.as_mut_ptr() as *mut libc::c_void;
         self._len = data.len();
         self._capacity = data.capacity();
@@ -162,18 +153,6 @@ impl NumberTyped for RuntimeNumberList {
     }
 }
 
-impl<N: NumberEx> From<RuntimeNumberList> for NumberList<N> {
-    fn from(rt_list: RuntimeNumberList) -> NumberList<N> {
-        NumberList::from_rt_list(rt_list)
-    }
-}
-
-impl<N: NumberEx> From<NumberList<N>> for RuntimeNumberList {
-    fn from(list: NumberList<N>) -> RuntimeNumberList {
-        list.into_rt_list()
-    }
-}
-
 fn _clone_rt_list<N: NumberEx>(rt_list: &RuntimeNumberList) -> RuntimeNumberList {
     unsafe {
         let data: Vec<N> = rt_list.borrow_vec();
@@ -185,130 +164,96 @@ fn _clone_rt_list<N: NumberEx>(rt_list: &RuntimeNumberList) -> RuntimeNumberList
 
 impl Clone for RuntimeNumberList {
     fn clone(&self) -> RuntimeNumberList {
-        match self._number_type {
-            NT::U8 => _clone_rt_list::<u8>(self),
-            NT::I8 => _clone_rt_list::<i8>(self),
-            NT::U16 => _clone_rt_list::<u16>(self),
-            NT::I16 => _clone_rt_list::<i16>(self),
-            NT::U32 => _clone_rt_list::<u32>(self),
-            NT::I32 => _clone_rt_list::<i32>(self),
-            NT::F32 => _clone_rt_list::<f32>(self),
-            NT::U64 => _clone_rt_list::<u64>(self),
-            NT::I64 => _clone_rt_list::<i64>(self),
-            NT::F64 => _clone_rt_list::<f64>(self),
-            NT::Usize => _clone_rt_list::<usize>(self),
-            NT::Isize => _clone_rt_list::<isize>(self),
-        }
+        apply_number_type!(self._number_type, _clone_rt_list, [self])
     }
+}
+
+fn _borrow_vec_for_drop<T: NumberEx>(rt_list: &mut RuntimeNumberList) {
+    unsafe { rt_list.borrow_vec::<T>() };
 }
 
 impl Drop for RuntimeNumberList {
     fn drop(&mut self) {
-        unsafe {
-            match self._number_type {
-                NT::U8 => {
-                    self.borrow_vec::<u8>();
-                }
-                NT::I8 => {
-                    self.borrow_vec::<i8>();
-                }
-                NT::U16 => {
-                    self.borrow_vec::<u16>();
-                }
-                NT::I16 => {
-                    self.borrow_vec::<i16>();
-                }
-                NT::U32 => {
-                    self.borrow_vec::<u32>();
-                }
-                NT::I32 => {
-                    self.borrow_vec::<i32>();
-                }
-                NT::F32 => {
-                    self.borrow_vec::<f32>();
-                }
-                NT::U64 => {
-                    self.borrow_vec::<u64>();
-                }
-                NT::I64 => {
-                    self.borrow_vec::<i64>();
-                }
-                NT::F64 => {
-                    self.borrow_vec::<f64>();
-                }
-                NT::Usize => {
-                    self.borrow_vec::<usize>();
-                }
-                NT::Isize => {
-                    self.borrow_vec::<isize>();
-                }
-            }
-        }
+        apply_number_type!(self._number_type, _borrow_vec_for_drop, [self]);
     }
 }
 
-struct NumberList<N: NumberEx> {
-    _rt_list: RuntimeNumberList,
-    _phantom: PhantomData<N>,
-}
 
-impl<N: NumberEx> NumberList<N> {
-    pub fn len(&self) -> usize {
-        self._rt_list.len()
-    }
 
-    pub fn is_empty(&self) -> bool {
-        self._rt_list.is_empty()
-    }
+// struct NumberList<N: NumberEx> {
+//     _rt_list: RuntimeNumberList,
+//     _phantom: PhantomData<N>,
+// }
 
-    pub fn capacity(&self) -> usize {
-        self._rt_list.capacity()
-    }
+// impl<N: NumberEx> From<RuntimeNumberList> for NumberList<N> {
+//     fn from(rt_list: RuntimeNumberList) -> NumberList<N> {
+//         NumberList::from_rt_list(rt_list)
+//     }
+// }
 
-    pub fn as_mut_ptr(&mut self) -> *mut N {
-        self._rt_list._ptr as *mut N
-    }
+// impl<N: NumberEx> From<NumberList<N>> for RuntimeNumberList {
+//     fn from(list: NumberList<N>) -> RuntimeNumberList {
+//         list.into_rt_list()
+//     }
+// }
 
-    pub fn as_ptr(&self) -> *const N {
-        self._rt_list._ptr as *const N
-    }
+// impl<N: NumberEx> NumberList<N> {
+//     pub fn len(&self) -> usize {
+//         self._rt_list.len()
+//     }
 
-    pub fn from_vec(mut v: Vec<N>) -> NumberList<N> {
-        let rt_list = RuntimeNumberList {
-            _number_type: N::number_type_of(),
-            _ptr: v.as_mut_ptr() as *mut libc::c_void,
-            _len: v.len(),
-            _capacity: v.capacity(),
-        };
-        std::mem::forget(v);
+//     pub fn is_empty(&self) -> bool {
+//         self._rt_list.is_empty()
+//     }
 
-        NumberList::from_rt_list(rt_list)
-    }
+//     pub fn capacity(&self) -> usize {
+//         self._rt_list.capacity()
+//     }
 
-    pub fn from_rt_list(rt_list: RuntimeNumberList) -> NumberList<N> {
-        assert_eq!(N::number_type_of(), rt_list._number_type);
-        NumberList {
-            _rt_list: rt_list,
-            _phantom: PhantomData,
-        }
-    }
+//     pub fn as_mut_ptr(&mut self) -> *mut N {
+//         self._rt_list._ptr as *mut N
+//     }
 
-    pub fn into_rt_list(self) -> RuntimeNumberList {
-        self._rt_list
-    }
+//     pub fn as_ptr(&self) -> *const N {
+//         self._rt_list._ptr as *const N
+//     }
 
-    pub fn to_vec(self) -> Vec<N> {
-        self._rt_list.force_to_vec()
-    }
+//     pub fn from_vec(mut v: Vec<N>) -> NumberList<N> {
+//         let rt_list = RuntimeNumberList {
+//             _number_type: N::number_type_of(),
+//             _ptr: v.as_mut_ptr() as *mut libc::c_void,
+//             _len: v.len(),
+//             _capacity: v.capacity(),
+//         };
+//         std::mem::forget(v);
 
-    pub fn as_slice(&self) -> &[N] {
-        unsafe { self._rt_list.unchecked_as_slice() }
-    }
+//         NumberList::from_rt_list(rt_list)
+//     }
 
-    pub fn as_slice_mut(&mut self) -> &mut [N] {
-        unsafe { self._rt_list.unchecked_as_slice_mut() }
-    }
-}
+//     pub fn from_rt_list(rt_list: RuntimeNumberList) -> NumberList<N> {
+//         assert_eq!(N::number_type_of(), rt_list._number_type);
+//         NumberList {
+//             _rt_list: rt_list,
+//             _phantom: PhantomData,
+//         }
+//     }
+
+//     pub fn into_rt_list(self) -> RuntimeNumberList {
+//         self._rt_list
+//     }
+
+//     pub fn to_vec(self) -> Vec<N> {
+//         self._rt_list.force_to_vec()
+//     }
+
+//     pub fn as_slice(&self) -> &[N] {
+//         unsafe { self._rt_list.unchecked_as_slice() }
+//     }
+
+//     pub fn as_slice_mut(&mut self) -> &mut [N] {
+//         unsafe { self._rt_list.unchecked_as_slice_mut() }
+//     }
+// }
 
 #[derive(NifUntaggedEnum, Debug)]
 pub enum NumberListEx {
