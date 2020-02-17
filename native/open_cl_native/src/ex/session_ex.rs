@@ -118,7 +118,7 @@ fn session_self_device(session: SessionEx) -> DeviceEx {
     session.device()
 }
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn session_self_create_buffer(
     session: SessionEx,
     number_type: NumberType,
@@ -250,7 +250,7 @@ fn _sync_write_buffer<T: NumberEx>(
         .map_err(From::from)
 }
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn session_self_write_array_to_buffer(
     session: SessionEx,
     buffer: BufferEx,
@@ -283,7 +283,7 @@ pub fn _sync_read_buffer<T: NumberEx>(
         .map(|num_vec| ArrayEx::from(RuntimeNumberList::from_vec(num_vec.unwrap())))
 }
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn session_self_read_buffer(
     session: SessionEx,
     buffer: BufferEx,
@@ -304,7 +304,7 @@ pub fn _execute_sync_kernel_operation<T: NumberEx>(
     Ok(())
 }
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn session_self_execute_kernel_operation(
     session: SessionEx,
     kernel_op_ex: KernelOpEx,

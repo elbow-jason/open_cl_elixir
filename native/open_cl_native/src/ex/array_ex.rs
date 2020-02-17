@@ -176,7 +176,7 @@ fn _push_to_rt_list<T: NumberEx>(rt_list: &mut RuntimeNumberList, num: NumEx) {
     rt_list.push::<T>(From::from(num));
 }
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyCpu")]
 fn array_push(array: ArrayEx, item: NumEx) -> Atom {
     let number_type = array.number_type();
     let mut rt_list = array.write_lock();
@@ -184,13 +184,13 @@ fn array_push(array: ArrayEx, item: NumEx) -> Atom {
     atoms::ok()
 }
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyCpu")]
 fn array_data(array: ArrayEx) -> NumberListEx {
     let rt_list = array.read_lock();
     NumberListEx::from(rt_list.clone())
 }
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyCpu")]
 fn array_length(array: ArrayEx) -> usize {
     array.read_lock().len()
 }
@@ -200,7 +200,7 @@ fn _extend_rt_with_list_iterator<'a, T: NumberEx + Decoder<'a>>(rt_list: &mut Ru
     Ok(_extend_rt_list_with_slice(rt_list, &other[..]))
 }
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyCpu")]
 fn array_extend_from_list<'a>(array: ArrayEx, iter: ListIterator<'a>) -> Result<(), Error> {
     let number_type = array.number_type();
     let mut rt_list = array.write_lock();
@@ -220,7 +220,7 @@ fn _extend_rt_list_with_slice<T: NumberEx>(rt_list: &mut RuntimeNumberList, othe
     rt_list.extend_from_slice::<T>(other);
 }
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyCpu")]
 fn array_extend_from_array(array: ArrayEx, other: ArrayEx) -> OutputEx<()> {
     let number_type = array.number_type();
     number_type.type_check(other.number_type())?;
@@ -260,7 +260,7 @@ fn _array_filled_with<T: NumberEx + Into<T>>(filler: NumEx, count: usize) -> Arr
     ArrayEx::filled_with::<T>(num, count)
 }
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyCpu")]
 fn array_new_filled_with(number_type: NumberType, filler: NumEx, count: usize) -> ArrayEx {
     apply_number_type!(number_type, _array_filled_with, [filler, count])
     // let casted = filler.cast_number(number_type);
@@ -281,12 +281,12 @@ fn array_new_filled_with(number_type: NumberType, filler: NumEx, count: usize) -
     // }
 }
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyCpu")]
 fn array_number_type(array: ArrayEx) -> NumberType {
     array.number_type()
 }
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyCpu")]
 fn array_cast(array: ArrayEx, number_type: NumberType) -> ArrayEx {
     array.cast_number(number_type)
 }
