@@ -1,5 +1,6 @@
 defmodule OpenCL.Test.ArrayHelpers do
   alias OpenCL.Array
+  use OpenCL.T
 
   defmacro __using__(_) do
     quote do
@@ -38,9 +39,15 @@ defmodule OpenCL.Test.ArrayHelpers do
         data = unquote(data)
         num = unquote(num)
 
-        array = Array.new(number_type, data)
-        assert :ok = Array.push(array, num)
-        assert Array.to_list(array) == ArrayHelpers.convert(number_type, data ++ [num])
+        array1 = Array.new(number_type, data)
+        assert %Array{} = array2 = Array.push(array1, num)
+        expected = data ++ [num]
+        # the original array is mutated and has the expected numbers
+        assert Array.to_list(array1) == ArrayHelpers.convert(number_type, expected)
+        # the new array is mutated and has the expected numbers
+        assert Array.to_list(array2) == ArrayHelpers.convert(number_type, expected)
+        # the array's ref is the same?
+        assert array1 == array2
       end
     end
   end
@@ -162,15 +169,12 @@ defmodule OpenCL.Test.ArrayHelpers do
   def to_array(number_type, data) when is_list(data), do: Array.new(number_type, data)
   def to_array(number_type, %Array{} = array), do: Array.type_cast(number_type, array)
 
-  @float_types [:f32, :f64]
-  defguard is_float_t(x) when x in @float_types
-
   def convert(t, data) when is_list(data) do
     Enum.map(data, fn item -> convert(t, item) end)
   end
 
-  def convert(t, data) when is_float_t(t) and is_float(data), do: data
-  def convert(t, data) when is_float_t(t) and is_integer(data), do: data * 1.0
-  def convert(t, data) when not is_float_t(t) and is_integer(data), do: data
-  def convert(t, data) when not is_float_t(t) and is_float(data), do: Float.round(data)
+  def convert(t, data) when T.is_float_type(t) and is_float(data), do: data
+  def convert(t, data) when T.is_float_type(t) and is_integer(data), do: data * 1.0
+  def convert(t, data) when not T.is_float_type(t) and is_integer(data), do: data
+  def convert(t, data) when not T.is_float_type(t) and is_float(data), do: Float.round(data)
 end

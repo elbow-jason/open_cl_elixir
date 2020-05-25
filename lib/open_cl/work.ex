@@ -21,7 +21,6 @@ defmodule OpenCL.Work do
 
   @type builder :: [option] | t() | Dims.t()
 
-
   defstruct [:global_work_size, :global_work_offset, :local_work_size]
 
   @spec build(builder()) :: t()

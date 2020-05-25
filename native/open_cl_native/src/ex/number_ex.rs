@@ -1,41 +1,30 @@
-use rustler::{NifUntaggedEnum};
-
-use opencl_core::ll::{ClNumber, KernelArg, SizeAndPtr};
-
-use num_traits::identities::Zero;
-use num_traits::{FromPrimitive, NumCast, ToPrimitive};
+use crate::nif;
+use open_cl_core::ll::numbers::Char;
+use open_cl_core::ll::numbers::NumCastFrom;
+use open_cl_core::{KernelArgPtr, Number, NumberType, NumberTyped, NumberTypedT};
 use std::fmt::Debug;
 
-use crate::{NumberType, NumberTyped, NumberTypedT};
+pub trait NumExT: Number + NumberTypedT + KernelArgPtr {}
 
-pub trait CastNumber {
-    fn cast_number(&self, number_type: NumberType) -> Self;
-}
-
-
-pub trait NumberEx:
-    ClNumber + NumberTypedT + NumCast + ToPrimitive + FromPrimitive + Zero + From<NumEx> + KernelArg
-{
-}
-
-impl<'a> NumberEx for u8 {}
-impl<'a> NumberEx for i8 {}
-impl<'a> NumberEx for u16 {}
-impl<'a> NumberEx for i16 {}
-impl<'a> NumberEx for u32 {}
-impl<'a> NumberEx for i32 {}
-impl<'a> NumberEx for f32 {}
-impl<'a> NumberEx for u64 {}
-impl<'a> NumberEx for i64 {}
-impl<'a> NumberEx for f64 {}
-impl<'a> NumberEx for usize {}
-impl<'a> NumberEx for isize {}
+impl NumExT for u8 {}
+impl NumExT for i8 {}
+impl NumExT for u16 {}
+impl NumExT for i16 {}
+impl NumExT for u32 {}
+impl NumExT for i32 {}
+impl NumExT for f32 {}
+impl NumExT for u64 {}
+impl NumExT for i64 {}
+impl NumExT for f64 {}
+impl NumExT for usize {}
+// impl NumberEx for Bool {}
+// impl NumberEx for isize {}
 
 // #[derive(NifRecord)]
 // #[tag = "global_work_size"]
 // pub struct GlobalWorkSize(pub DimsEx);
 
-#[derive(NifUntaggedEnum, Debug, Clone, Copy)]
+#[derive(nif::NifUntaggedEnum, Debug, Clone, Copy)]
 pub enum NumEx {
     U8(u8),
     I8(i8),
@@ -48,130 +37,153 @@ pub enum NumEx {
     I64(i64),
     F64(f64),
     Usize(usize),
-    Isize(isize),
+    // Bool(u32),
+    // Isize(isize),
 }
 
-impl CastNumber for NumEx {
-    fn cast_number(&self, number_type: NumberType) -> NumEx {
-        use NumberType as NT;
-        match number_type {
-            NT::I8 => NumEx::I8(self.into()),
-            NT::U8 => NumEx::U8(self.into()),
-            NT::U16 => NumEx::U16(self.into()),
-            NT::I16 => NumEx::I16(self.into()),
-            NT::U32 => NumEx::U32(self.into()),
-            NT::I32 => NumEx::I32(self.into()),
-            NT::F32 => NumEx::F32(self.into()),
-            NT::U64 => NumEx::U64(self.into()),
-            NT::I64 => NumEx::I64(self.into()),
-            NT::F64 => NumEx::F64(self.into()),
-            NT::Usize => NumEx::Usize(self.into()),
-            NT::Isize => NumEx::Isize(self.into()),
+impl NumCastFrom<NumEx> for Char {
+    fn num_cast_from(num: NumEx) -> Option<Char> {
+        match num {
+            NumEx::U8(val) => Char::num_cast_from(val),
+            NumEx::I8(val) => Char::num_cast_from(val),
+            NumEx::U16(val) => Char::num_cast_from(val),
+            NumEx::I16(val) => Char::num_cast_from(val),
+            NumEx::U32(val) => Char::num_cast_from(val),
+            NumEx::I32(val) => Char::num_cast_from(val),
+            NumEx::F32(val) => Char::num_cast_from(val),
+            NumEx::U64(val) => Char::num_cast_from(val),
+            NumEx::I64(val) => Char::num_cast_from(val),
+            NumEx::F64(val) => Char::num_cast_from(val),
+            NumEx::Usize(val) => Char::num_cast_from(val),
+            // NumEx::Isize(val) => Char::num_cast_from(val),
         }
     }
 }
 
-unsafe impl KernelArg for NumEx {
-    unsafe fn as_kernel_arg(&self) -> SizeAndPtr<*mut libc::c_void> {
+unsafe impl KernelArgPtr for NumEx {
+    fn kernel_arg_size(&self) -> usize {
         match self {
-            NumEx::I8(num) => num.as_kernel_arg(),
-            NumEx::U8(num) => num.as_kernel_arg(),
-            NumEx::U16(num) => num.as_kernel_arg(),
-            NumEx::I16(num) => num.as_kernel_arg(),
-            NumEx::U32(num) => num.as_kernel_arg(),
-            NumEx::I32(num) => num.as_kernel_arg(),
-            NumEx::F32(num) => num.as_kernel_arg(),
-            NumEx::U64(num) => num.as_kernel_arg(),
-            NumEx::I64(num) => num.as_kernel_arg(),
-            NumEx::F64(num) => num.as_kernel_arg(),
-            NumEx::Usize(num) => num.as_kernel_arg(),
-            NumEx::Isize(num) => num.as_kernel_arg(),
+            NumEx::I8(..) => std::mem::size_of::<i8>(),
+            NumEx::U8(..) => std::mem::size_of::<u8>(),
+            NumEx::U16(..) => std::mem::size_of::<u16>(),
+            NumEx::I16(..) => std::mem::size_of::<i16>(),
+            NumEx::U32(..) => std::mem::size_of::<u32>(),
+            NumEx::I32(..) => std::mem::size_of::<i32>(),
+            NumEx::F32(..) => std::mem::size_of::<f32>(),
+            NumEx::U64(..) => std::mem::size_of::<u64>(),
+            NumEx::I64(..) => std::mem::size_of::<i64>(),
+            NumEx::F64(..) => std::mem::size_of::<f64>(),
+            NumEx::Usize(..) => std::mem::size_of::<usize>(),
         }
+    }
+
+    fn kernel_arg_number_type(&self) -> NumberType {
+        self.number_type()
+    }
+
+    unsafe fn kernel_arg_ptr(&self) -> *const libc::c_void {
+        match self {
+            NumEx::I8(n) => n as *const _ as *const libc::c_void,
+            NumEx::U8(n) => n as *const _ as *const libc::c_void,
+            NumEx::U16(n) => n as *const _ as *const libc::c_void,
+            NumEx::I16(n) => n as *const _ as *const libc::c_void,
+            NumEx::U32(n) => n as *const _ as *const libc::c_void,
+            NumEx::I32(n) => n as *const _ as *const libc::c_void,
+            NumEx::F32(n) => n as *const _ as *const libc::c_void,
+            NumEx::U64(n) => n as *const _ as *const libc::c_void,
+            NumEx::I64(n) => n as *const _ as *const libc::c_void,
+            NumEx::F64(n) => n as *const _ as *const libc::c_void,
+            NumEx::Usize(n) => n as *const _ as *const libc::c_void,
+        }
+    }
+
+    unsafe fn kernel_arg_mut_ptr(&mut self) -> *mut libc::c_void {
+        self.kernel_arg_ptr() as *mut libc::c_void
     }
 }
 
-macro_rules! impl_num_ex_primitive_conversion {
-    ($t:ty, $variant:ident) => {
-        impl From<NumEx> for $t {
-            fn from(num: NumEx) -> $t {
-                match num {
-                    NumEx::U8(val) => val as $t,
-                    NumEx::I8(val) => val as $t,
-                    NumEx::U16(val) => val as $t,
-                    NumEx::I16(val) => val as $t,
-                    NumEx::U32(val) => val as $t,
-                    NumEx::I32(val) => val as $t,
-                    NumEx::F32(val) => val as $t,
-                    NumEx::U64(val) => val as $t,
-                    NumEx::I64(val) => val as $t,
-                    NumEx::F64(val) => val as $t,
-                    NumEx::Usize(val) => val as $t,
-                    NumEx::Isize(val) => val as $t,
-                }
-            }
-        }
+// macro_rules! impl_num_ex_primitive_conversion {
+//     ($t:ty, $variant:ident) => {
+//         impl From<NumEx> for $t {
+//             fn from(num: NumEx) -> $t {
+//                 match num {
+//                     NumEx::U8(val) => val as $t,
+//                     NumEx::I8(val) => val as $t,
+//                     NumEx::U16(val) => val as $t,
+//                     NumEx::I16(val) => val as $t,
+//                     NumEx::U32(val) => val as $t,
+//                     NumEx::I32(val) => val as $t,
+//                     NumEx::F32(val) => val as $t,
+//                     NumEx::U64(val) => val as $t,
+//                     NumEx::I64(val) => val as $t,
+//                     NumEx::F64(val) => val as $t,
+//                     NumEx::Usize(val) => val as $t,
+//                     // NumEx::Isize(val) => val as $t,
+//                 }
+//             }
+//         }
 
-        impl From<&NumEx> for $t {
-            fn from(num: &NumEx) -> $t {
-                match num {
-                    NumEx::U8(val) => *val as $t,
-                    NumEx::I8(val) => *val as $t,
-                    NumEx::U16(val) => *val as $t,
-                    NumEx::I16(val) => *val as $t,
-                    NumEx::U32(val) => *val as $t,
-                    NumEx::I32(val) => *val as $t,
-                    NumEx::F32(val) => *val as $t,
-                    NumEx::U64(val) => *val as $t,
-                    NumEx::I64(val) => *val as $t,
-                    NumEx::F64(val) => *val as $t,
-                    NumEx::Usize(val) => *val as $t,
-                    NumEx::Isize(val) => *val as $t,
-                }
-            }
-        }
+//         impl From<&NumEx> for $t {
+//             fn from(num: &NumEx) -> $t {
+//                 match num {
+//                     NumEx::U8(val) => *val as $t,
+//                     NumEx::I8(val) => *val as $t,
+//                     NumEx::U16(val) => *val as $t,
+//                     NumEx::I16(val) => *val as $t,
+//                     NumEx::U32(val) => *val as $t,
+//                     NumEx::I32(val) => *val as $t,
+//                     NumEx::F32(val) => *val as $t,
+//                     NumEx::U64(val) => *val as $t,
+//                     NumEx::I64(val) => *val as $t,
+//                     NumEx::F64(val) => *val as $t,
+//                     NumEx::Usize(val) => *val as $t,
+//                     // NumEx::Isize(val) => *val as $t,
+//                 }
+//             }
+//         }
 
-        impl From<$t> for NumEx {
-            fn from(num: $t) -> NumEx {
-                NumEx::$variant(num)
-            }
-        }
+//         impl From<$t> for NumEx {
+//             fn from(num: $t) -> NumEx {
+//                 NumEx::$variant(num)
+//             }
+//         }
 
-        impl From<&$t> for NumEx {
-            fn from(num: &$t) -> NumEx {
-                NumEx::$variant(*num)
-            }
-        }
-    };
-}
+//         impl From<&$t> for NumEx {
+//             fn from(num: &$t) -> NumEx {
+//                 NumEx::$variant(*num)
+//             }
+//         }
+//     };
+// }
 
-impl_num_ex_primitive_conversion!(i8, I8);
-impl_num_ex_primitive_conversion!(u8, U8);
-impl_num_ex_primitive_conversion!(u16, U16);
-impl_num_ex_primitive_conversion!(i16, I16);
-impl_num_ex_primitive_conversion!(u32, U32);
-impl_num_ex_primitive_conversion!(i32, I32);
-impl_num_ex_primitive_conversion!(f32, F32);
-impl_num_ex_primitive_conversion!(u64, U64);
-impl_num_ex_primitive_conversion!(i64, I64);
-impl_num_ex_primitive_conversion!(f64, F64);
-impl_num_ex_primitive_conversion!(usize, Usize);
-impl_num_ex_primitive_conversion!(isize, Isize);
+// impl_num_ex_primitive_conversion!(i8, I8);
+// impl_num_ex_primitive_conversion!(u8, U8);
+// impl_num_ex_primitive_conversion!(u16, U16);
+// impl_num_ex_primitive_conversion!(i16, I16);
+// impl_num_ex_primitive_conversion!(u32, U32);
+// impl_num_ex_primitive_conversion!(i32, I32);
+// impl_num_ex_primitive_conversion!(f32, F32);
+// impl_num_ex_primitive_conversion!(u64, U64);
+// impl_num_ex_primitive_conversion!(i64, I64);
+// impl_num_ex_primitive_conversion!(f64, F64);
+// impl_num_ex_primitive_conversion!(usize, Usize);
+// impl_num_ex_primitive_conversion!(isize, Isize);
 
 impl NumberTyped for NumEx {
     fn number_type(&self) -> NumberType {
         match self {
-            NumEx::U8(..) => NumberType::U8,
-            NumEx::I8(..) => NumberType::I8,
-            NumEx::U16(..) => NumberType::U16,
-            NumEx::I16(..) => NumberType::I16,
-            NumEx::U32(..) => NumberType::U32,
-            NumEx::I32(..) => NumberType::I32,
-            NumEx::F32(..) => NumberType::F32,
-            NumEx::U64(..) => NumberType::U64,
-            NumEx::I64(..) => NumberType::I64,
-            NumEx::F64(..) => NumberType::F64,
-            NumEx::Usize(..) => NumberType::Usize,
-            NumEx::Isize(..) => NumberType::Isize,
+            NumEx::U8(..) => u8::number_type(),
+            NumEx::I8(..) => i8::number_type(),
+            NumEx::U16(..) => u16::number_type(),
+            NumEx::I16(..) => i16::number_type(),
+            NumEx::U32(..) => u32::number_type(),
+            NumEx::I32(..) => i32::number_type(),
+            NumEx::F32(..) => f32::number_type(),
+            NumEx::U64(..) => u64::number_type(),
+            NumEx::I64(..) => i64::number_type(),
+            NumEx::F64(..) => f64::number_type(),
+            NumEx::Usize(..) => usize::number_type(),
+            // NumEx::Isize(..) => isize::number_type(),
         }
     }
 }
@@ -319,34 +331,34 @@ impl NumberTyped for NumEx {
 // define_slice_of_t!(usize, Usize);
 // define_slice_of_t!(isize, Isize);
 
-macro_rules! impl_number_typed_for_vec {
-    ($t:ty, $variant:ident) => {
-        impl NumberTyped for Vec<$t> {
-            fn number_type(&self) -> NumberType {
-                NumberType::$variant
-            }
-        }
+// macro_rules! impl_number_typed_for_vec {
+//     ($t:ty, $variant:ident) => {
+//         impl NumberTyped for Vec<$t> {
+//             fn number_type(&self) -> NumberType {
+//                 NumberType::$variant
+//             }
+//         }
 
-        impl NumberTypedT for Vec<$t> {
-            fn number_type_of() -> NumberType {
-                NumberType::$variant
-            }
-        }
-    };
-}
+//         impl NumberTypedT for Vec<$t> {
+//             fn number_type_of() -> NumberType {
+//                 NumberType::$variant
+//             }
+//         }
+//     };
+// }
 
-impl_number_typed_for_vec!(u8, U8);
-impl_number_typed_for_vec!(i8, I8);
-impl_number_typed_for_vec!(u16, U16);
-impl_number_typed_for_vec!(i16, I16);
-impl_number_typed_for_vec!(u32, U32);
-impl_number_typed_for_vec!(i32, I32);
-impl_number_typed_for_vec!(f32, F32);
-impl_number_typed_for_vec!(u64, U64);
-impl_number_typed_for_vec!(i64, I64);
-impl_number_typed_for_vec!(f64, F64);
-impl_number_typed_for_vec!(usize, Usize);
-impl_number_typed_for_vec!(isize, Isize);
+// impl_number_typed_for_vec!(u8, U8);
+// impl_number_typed_for_vec!(i8, I8);
+// impl_number_typed_for_vec!(u16, U16);
+// impl_number_typed_for_vec!(i16, I16);
+// impl_number_typed_for_vec!(u32, U32);
+// impl_number_typed_for_vec!(i32, I32);
+// impl_number_typed_for_vec!(f32, F32);
+// impl_number_typed_for_vec!(u64, U64);
+// impl_number_typed_for_vec!(i64, I64);
+// impl_number_typed_for_vec!(f64, F64);
+// impl_number_typed_for_vec!(usize, Usize);
+// impl_number_typed_for_vec!(isize, Isize);
 
 // impl NumberTyped for NumberVector {
 //     fn number_type(&self) -> NumberType {

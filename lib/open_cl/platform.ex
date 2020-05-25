@@ -25,8 +25,8 @@ defmodule OpenCL.Platform do
   defimpl Inspect do
     @spec inspect(Platform.t(), any) :: String.t()
     def inspect(platform, _) do
-      {:ok, name} = Platform.name(platform)
-      {:ok, version} = Platform.version(platform)
+      name = Platform.name(platform)
+      version = Platform.version(platform)
       "#OpenCL.Platform<[name: #{name}, version: #{version}]>"
     end
   end

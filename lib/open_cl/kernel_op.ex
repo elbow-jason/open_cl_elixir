@@ -45,7 +45,11 @@ defmodule OpenCL.KernelOp do
   end
 
   def to_native(%KernelOp{work: work, command_queue_opts: cq_opts} = kernel_op) do
-    %KernelOp{kernel_op | work: Work.to_native(work), command_queue_opts: CommandQueueOpts.to_native(cq_opts)}
+    %KernelOp{
+      kernel_op
+      | work: Work.to_native(work),
+        command_queue_opts: CommandQueueOpts.to_native(cq_opts)
+    }
   end
 
   def errors(%KernelOp{} = op) do

@@ -1,29 +1,44 @@
-#![allow(dead_code)]
+// #![allow(dead_code)]
+#![feature(const_type_id)]
 
-
-extern crate log;
 #[macro_use]
-extern crate failure;
-extern crate ndarray;
-extern crate num;
-extern crate num_complex;
-
-// use ndarray::prelude::*;
-
-use rustler::{Env, Term};
-
-mod atoms;
+extern crate lazy_static;
 
 #[macro_use]
 mod macros;
+
+use std::sync::Mutex;
+
+extern crate log;
+// #[macro_use]
+// extern crate failure;
+
+// #[macro_use]
+// extern crate rustler;
+// extern crate ndarray;
+// extern crate num;
+// extern crate num_complex;
+
+// use ndarray::prelude::*;
+
+mod atoms;
+mod nif;
+
+mod errors;
+pub use errors::*;
+
+mod type_id;
+
+// type NifResult = Result<(), Error>;
+
 mod ex;
-mod number;
+// mod number;
 mod traits;
 
 pub use ex::*;
-pub use number::*;
+// pub use number::*;
 
-rustler::init! {
+rustler::init!(
     "Elixir.OpenCL.Native",
     [
         // platform
@@ -34,18 +49,14 @@ rustler::init! {
         platform_ex::platform_self_profile,
         platform_ex::platform_self_vendor,
         platform_ex::platform_self_extensions,
-
         platform_ex::platform_list_all_devices,
         platform_ex::platform_list_default_devices,
         platform_ex::platform_list_cpu_devices,
         platform_ex::platform_list_gpu_devices,
         platform_ex::platform_list_accelerator_devices,
         platform_ex::platform_list_custom_devices,
-
-
-        // device_ex::device_default,
-        device_ex::device_self_is_usable,
-
+        // // DEVICE
+        device_ex::device_default,
         device_ex::device_self_name,
         device_ex::device_self_version,
         device_ex::device_self_opencl_c_version,
@@ -99,12 +110,14 @@ rustler::init! {
         device_ex::device_self_printf_buffer_size,
         device_ex::device_self_profiling_timer_resolution,
         device_ex::device_self_max_work_item_sizes,
-        // device_ex::device_self_partition_affinity_domain,
-
+        device_ex::device_self_partition_affinity_domain,
+        // SESSION
         session_ex::session_create,
         session_ex::session_create_with_devices,
         session_ex::session_self_device,
-        session_ex::session_self_create_buffer,
+        session_ex::session_self_create_buffer_from_list,
+        session_ex::session_self_create_buffer_from_array,
+        session_ex::session_self_create_buffer_with_length,
         session_ex::session_self_write_array_to_buffer,
         session_ex::session_self_read_buffer,
         session_ex::session_self_execute_kernel_operation,
@@ -173,19 +186,28 @@ rustler::init! {
         array_ex::array_extend_from_array,
         array_ex::array_number_type,
         array_ex::array_cast,
-
-        // DEVICE_BUFFER
+        // BUFFER
         buffer_ex::buffer_self_length,
         buffer_ex::buffer_self_number_type,
-        // device_buffer_ex::buffer_to_array,
-        // device_buffer_ex::buffer_reference_count,
-
+        buffer_ex::buffer_self_mem_config,
+        buffer_ex::buffer_self_reference_count,
+        buffer_ex::buffer_self_available_devices,
     ],
     load = load
+);
+
+lazy_static! {
+    static ref LOGGER_INITED: Mutex<bool> = Mutex::new(false);
 }
 
-fn load<'a>(env: Env<'a>, _load_info: Term<'a>) -> bool {
-    env_logger::init();
+fn load<'a>(env: nif::Env<'a>, _load_info: nif::Term<'a>) -> bool {
+    // Keep the logger from panicking.
+    let mut logger_lock = LOGGER_INITED.lock().unwrap();
+    if *logger_lock == false {
+        env_logger::init();
+        *logger_lock = true;
+    }
+    std::mem::drop(logger_lock);
 
     // debug!("this is a debug {}", "message");
     // error!("this is printed by default");

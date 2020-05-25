@@ -1,5 +1,4 @@
 defmodule OpenCL.Test.Repeat do
-
   defmacro n_times(n, do: block) do
     quote do
       for _ <- 1..unquote(n) do
@@ -17,6 +16,5 @@ defmodule OpenCL.Test.Repeat do
       end)
       |> Enum.map(fn task -> Task.await(task) end)
     end
-
   end
 end

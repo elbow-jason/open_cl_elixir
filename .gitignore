@@ -24,3 +24,4 @@ open_cl-*.tar
 priv/native/*.so
 .tool-versions
 target/
+.elixir_ls/

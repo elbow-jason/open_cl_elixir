@@ -38,7 +38,7 @@ defmodule OpenCL.MixProject do
 
   defp deps do
     [
-      {:rustler, "~> 0.21.0"},
+      {:rustler, "~> 0.21.0"}
     ]
   end
 
