@@ -103,29 +103,5 @@ impl KernelOpEx {
             op = op.add_arg(arg.into_kernel_op_arg());
         }
         op
-        //         let mut op = KernelOperation::new(self.name.as_str()).with_work(self.work.clone());
-        //         log::debug!("session_self_execute_kernel_operation: {:?}\r", op.name());
-        //         if let Some(opts) = &self.command_queue_opts {
-        //             op = op.with_command_queue_options(opts.into());
-        //         };
-        //         log::debug!("set command_queue_options: {:?}\r", op.command_queue_opts());
-
-        //         for arg in self.args.iter() {
-        //             match arg {
-        //                 ArgEx::Buffer(buf) => {
-        //                     op.add_arg(locked_mem.arg_ptr())
-        //                 }
-        //                 ArgEx::Num(num) => {
-        //                 }
-        //             }
-        //         }
-        // log::debug!("ready_args: {:?}\r", ready_args.len());
-        // for ready in ready_args.iter() {
-        //     match ready {
-        //         ReadyArg::Mem(locked_mem) => op = ,
-        //         ReadyArg::Num(arg_ptr) => op = op.add_arg(arg_ptr),
     }
 }
-
-//     }
-// }

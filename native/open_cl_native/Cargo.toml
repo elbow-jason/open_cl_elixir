@@ -10,18 +10,12 @@ path = "src/lib.rs"
 crate-type = ["dylib"]
 
 [dependencies]
-# rustler = { git = "https://github.com/elbow-jason/rustler", branch = "add-return-term-to-error" }
 rustler = "0.22.0-rc.0"
 open-cl-core = { git = "https://github.com/elbow-jason/open_cl_rust", rev = "6d50604"}
-# serde_rustler = "0.0.3"
-failure = "0.1.6"
 paste = "0.1.6"
-ndarray = "0.13.0"
 libc = "0.2.65"
-num = "0.2.0"
 anyhow = "1.0"
 thiserror = "1.0"
 lazy_static = "1.4.0"
-
 env_logger = "0.7"
 log = "0.4"

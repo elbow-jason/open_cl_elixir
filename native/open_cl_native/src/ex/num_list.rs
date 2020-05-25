@@ -147,7 +147,7 @@ impl BufferBuilder for NumList {
     }
 
     fn buffer_ptr(&self) -> *mut libc::c_void {
-        self.ptr // as *mut libc::c_void
+        self.ptr
     }
 
     fn mem_config(&self) -> MemConfig {

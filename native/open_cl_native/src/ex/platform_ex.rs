@@ -71,14 +71,6 @@ macro_rules! list_devices {
         }
     };
 }
-// #[rustler::nif]
-// fn platform_list_all_devices(platform: PlatformEx) -> OutputEx<Vec<DeviceEx>> {
-//     Device::list_all_devices(platform.native())
-//         .map(|devices| {
-//             devices.into_iter().map(|d| DeviceEx::new(d)).collect()
-//         })
-//         .map_err(|e| e.into())
-// }
 
 list_devices!(list_all_devices);
 list_devices!(list_default_devices);
@@ -86,12 +78,6 @@ list_devices!(list_cpu_devices);
 list_devices!(list_gpu_devices);
 list_devices!(list_accelerator_devices);
 list_devices!(list_custom_devices);
-
-// impl_native_method_into_other_and_nif!(PlatformEx, platform, list_all_devices, Vec<DeviceEx>);
-// impl_native_method_into_other_and_nif!(PlatformEx, platform, cpu_devices, Vec<DeviceEx>);
-// impl_native_method_into_other_and_nif!(PlatformEx, platform, gpu_devices, Vec<DeviceEx>);
-// impl_native_method_into_other_and_nif!(PlatformEx, platform, accelerator_devices, Vec<DeviceEx>);
-// impl_native_method_into_other_and_nif!(PlatformEx, platform, custom_devices, Vec<DeviceEx>);
 
 impl_native_method_and_nif!(PlatformEx, platform, name, String);
 impl_native_method_and_nif!(PlatformEx, platform, version, String);

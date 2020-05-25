@@ -277,29 +277,6 @@ pub fn session_self_read_buffer(
     }
 }
 
-// pub struct LockedMemArg<'a> {
-//     _write_lock: RwLockWriteGuard<'a, Mem>,
-//     _arg_ptr: ArgPtr<'a>,
-// }
-
-// impl<'a> LockedMemArg<'a> {
-//     pub fn new(write_lock: RwLockWriteGuard<'a, Mem>) -> LockedMemArg<'a> {
-//         let arg_ptr = unsafe {
-//             ArgPtr::from_raw_parts(
-//                 write_lock.mem_ptr().as_mut_ptr(),
-//                 std::mem::size_of::<cl_mem>(),
-//             )
-//         };
-//         LockedMemArg {
-//             _write_lock: write_lock,
-//             _arg_ptr: arg_ptr,
-//         }
-//     }
-//     pub fn arg_ptr(&self) -> &ArgPtr<'a> {
-//         &self._arg_ptr
-//     }
-// }
-
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn session_self_execute_kernel_operation(
     session: SessionEx,

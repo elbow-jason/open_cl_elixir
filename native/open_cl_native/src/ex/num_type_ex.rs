@@ -34,9 +34,7 @@ impl From<NumberType> for NumTypeEx {
             type_id::F32 => NumTypeEx::Float,
             type_id::F64 => NumTypeEx::Double,
             type_id::USIZE => NumTypeEx::SizeT,
-            _ => panic!("Unimplemented number type {:?}", val)
-            // i8 =>
-            // bool => NumTypeEx::ClBool,
+            _ => panic!("Unimplemented number type {:?}", val),
         }
     }
 }

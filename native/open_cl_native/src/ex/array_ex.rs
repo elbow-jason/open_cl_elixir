@@ -116,10 +116,6 @@ impl ArrayEx {
     pub fn is_same_array(&self, other: &ArrayEx) -> bool {
         std::ptr::eq(self.__native__.rw_lock(), other.__native__.rw_lock())
     }
-
-    // pub fn into_rt_list(self) -> RuntimeNumberList {
-    //     self.read_lock().clone()
-    // }
 }
 
 impl VecOps<u32> for ArrayEx {
@@ -174,10 +170,6 @@ fn _iter_to_vec<'a, T: NumExT + nif::Decoder<'a>>(
     }
     Ok(output)
 }
-
-// fn _iter_to_list<'a, T: NumExT + Decoder<'a>>(iter: ListIterator<'a>) -> Result<NumList, Error> {
-//     Ok(NumList::from_vec(_iter_to_vec::<'a, T>(iter)?))
-// }
 
 #[rustler::nif]
 fn array_new<'a>(num_type_ex: NumTypeEx, iter: nif::ListIterator<'a>) -> nif::Result<ArrayEx> {
@@ -272,26 +264,6 @@ fn array_extend_from_array(array: ArrayEx, other: ArrayEx) -> nif::Result<()> {
     }
 }
 
-//     // match other_rt_list.number_type() {
-//     //     NumberType::U8 => self_rt_list.extend_from_slice::<u8>(other_rt_list.force_as_slice()),
-//     //     NumberType::I8 => self_rt_list.extend_from_slice::<i8>(other_rt_list.force_as_slice()),
-//     //     NumberType::U16 => self_rt_list.extend_from_slice::<u16>(other_rt_list.force_as_slice()),
-//     //     NumberType::I16 => self_rt_list.extend_from_slice::<i16>(other_rt_list.force_as_slice()),
-//     //     NumberType::U32 => self_rt_list.extend_from_slice::<u32>(other_rt_list.force_as_slice()),
-//     //     NumberType::I32 => self_rt_list.extend_from_slice::<i32>(other_rt_list.force_as_slice()),
-//     //     NumberType::F32 => self_rt_list.extend_from_slice::<f32>(other_rt_list.force_as_slice()),
-//     //     NumberType::U64 => self_rt_list.extend_from_slice::<u64>(other_rt_list.force_as_slice()),
-//     //     NumberType::I64 => self_rt_list.extend_from_slice::<i64>(other_rt_list.force_as_slice()),
-//     //     NumberType::F64 => self_rt_list.extend_from_slice::<f64>(other_rt_list.force_as_slice()),
-//     //     NumberType::Usize => {
-//     //         self_rt_list.extend_from_slice::<usize>(other_rt_list.force_as_slice())
-//     //     }
-//     //     NumberType::Isize => {
-//     //         self_rt_list.extend_from_slice::<isize>(other_rt_list.force_as_slice())
-//     //     }
-//     // }
-// }
-
 fn _array_filled_with<'a, T: NumExT + Decoder<'a>>(
     filler: nif::Term<'a>,
     count: usize,
@@ -372,31 +344,6 @@ macro_rules! apply_num_type_ex_and_type_id {
         }
     };
 }
-// fn _cast_num_list2<U, T>(ptr: *mut libc::c_void, len: usize) -> nif::Result<NumList>
-// where
-//     T: NumExT,
-//     U: NumExT + NumCastFrom<T>,
-// {
-//     let slice_t: &[T] = unsafe { std::slice::from_raw_parts(ptr as *const T, len) };
-//     let mut vec_u: Vec<U> = Vec::with_capacity(len);
-//     let mut casted = U::zero();
-//     for num1 in slice_t.iter() {
-//         casted = U::num_cast_from(*num1)
-//             .ok_or_else(|| nif::error_string("failed to cast number to list"))?;
-//         vec_u.push(casted);
-//     }
-//     Ok(NumList::from_vec(vec_u))
-// }
-
-// fn _cast_num_list1<T: NumExT>(num_list: NumList) -> nif::Result<NumList> {
-//     apply_type_id!(
-//         type_id: num_list.tid(),
-//         right_t: T,
-//         func: _cast_num_list2,
-//         args: [num_list.as_mut_ptr(), num_list.len()],
-//         default: Err(nif::error_string("Unmatched type_id during array_cast"))
-//     )
-// }
 
 fn _cast_num_list3<T, U>(num_list: &NumList) -> nif::Result<NumList>
 where

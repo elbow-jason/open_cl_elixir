@@ -189,22 +189,6 @@ impl DeviceAffinityDomainEx {
     }
 }
 
-// impl DeviceEx {
-//     pub fn partition_affinity_domain(&self) -> OutputEx<Vec<DeviceAffinityDomainEx>> {
-//         let aff: DeviceAffinityDomain = self.native().partition_affinity_domain().map_err(|e| {
-//             let ee: ErrorEx = e.into();
-//             ee
-//         })?;
-//         Ok(DeviceAffinityDomainEx::list(aff))
-//     }
-// }
-
-// impl Encoder for DeviceType {
-//     fn encode<'a>(&self, env: Env<'a>) -> Term<'a> {
-//         1.encode(env)
-//     }
-// }
-
 // impl Encoder for DeviceMemCacheType {
 //     fn encode<'a>(&self, env: Env<'a>) -> Term<'a> {
 //         1.encode(env)
