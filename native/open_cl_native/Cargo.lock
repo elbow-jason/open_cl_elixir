@@ -401,7 +401,7 @@ dependencies = [
 [[package]]
 name = "open-cl-core"
 version = "0.2.1"
-source = "git+https://github.com/elbow-jason/open_cl_rust?rev=6d50604#6d50604e1d64267a258dc319e425eb81f2112c1e"
+source = "git+https://github.com/elbow-jason/open_cl_rust?rev=3076fba#3076fba0459f248e56ad63a8f36d61f68034f2d9"
 dependencies = [
  "bitflags",
  "chrono",
@@ -419,7 +419,7 @@ dependencies = [
 [[package]]
 name = "open-cl-low-level"
 version = "0.2.1"
-source = "git+https://github.com/elbow-jason/open_cl_rust?rev=6d50604#6d50604e1d64267a258dc319e425eb81f2112c1e"
+source = "git+https://github.com/elbow-jason/open_cl_rust?rev=3076fba#3076fba0459f248e56ad63a8f36d61f68034f2d9"
 dependencies = [
  "anyhow",
  "bitflags",

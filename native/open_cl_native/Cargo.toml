@@ -11,7 +11,7 @@ crate-type = ["dylib"]
 
 [dependencies]
 rustler = "0.22.0-rc.0"
-open-cl-core = { git = "https://github.com/elbow-jason/open_cl_rust", rev = "6d50604"}
+open-cl-core = { git = "https://github.com/elbow-jason/open_cl_rust", rev = "3076fba"}
 paste = "0.1.6"
 libc = "0.2.65"
 anyhow = "1.0"
