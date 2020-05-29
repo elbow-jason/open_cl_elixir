@@ -28,7 +28,7 @@ defmodule OpenCL.KernelOp do
             args: []
 
   @spec build(name(), work_builder(), args, options) :: t()
-  def build(name, work_builder, args, opts \\ []) when is_list(args) do
+  def build(name, work_builder, args, opts \\ []) when is_binary(name) and is_list(args) do
     %KernelOp{
       name: name,
       work: Work.build(work_builder),

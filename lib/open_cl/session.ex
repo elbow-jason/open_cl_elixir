@@ -122,11 +122,9 @@ defmodule OpenCL.Session do
           KernelOp.options()
         ) :: :ok | {:error, binary | [any]} | {:ok, any}
   def execute_kernel(%Session{} = session, name, work_builder, args, opts \\ []) do
-    work = Work.build(work_builder)
-
     kernel_op =
       name
-      |> KernelOp.build(work, args, opts)
+      |> KernelOp.build(work_builder, args, opts)
       |> KernelOp.to_native()
 
     execute_kernel_op(session, kernel_op)
