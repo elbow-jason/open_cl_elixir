@@ -44,12 +44,8 @@ defmodule OpenCL.KernelOp do
     Enum.at(args, index)
   end
 
-  def to_native(%KernelOp{work: work, command_queue_opts: cq_opts} = kernel_op) do
-    %KernelOp{
-      kernel_op
-      | work: Work.to_native(work),
-        command_queue_opts: CommandQueueOpts.to_native(cq_opts)
-    }
+  def to_native(%KernelOp{ command_queue_opts: cq_opts} = kernel_op) do
+    %KernelOp{kernel_op | command_queue_opts: CommandQueueOpts.to_native(cq_opts) }
   end
 
   def errors(%KernelOp{} = op) do

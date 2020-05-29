@@ -79,12 +79,4 @@ defmodule OpenCL.Work do
       true -> [local_work_size: "must be dimensional or nil"]
     end
   end
-
-  def to_native(%Work{global_work_size: nil}) do
-    raise "OpenCL.Work :global_work_size must be dimensional"
-  end
-
-  def to_native(%Work{} = work) do
-    Map.from_struct(work)
-  end
 end
