@@ -10,7 +10,7 @@ defmodule OpenCL.BugRegressionTest do
   test "12_JAN_2020 - A buffer that IS used in a kernel is thread-safe", %{sessions: sessions} do
     for session <- sessions do
       count = 500
-      array = Array.filled_with(:char, 0, count)
+      assert {:ok, array} = Array.filled_with({:char, 0}, count)
 
       with_concurrency 10 do
         n_times 200 do
@@ -26,7 +26,7 @@ defmodule OpenCL.BugRegressionTest do
   test "6_JAN_2020 - A buffer that is not used in a kernel is thread-safe", %{sessions: sessions} do
     for session <- sessions do
       count = 500
-      array = Array.filled_with(:char, 0, count)
+      assert {:ok, array} = Array.filled_with({:char, 0}, count)
       assert %Array{} = array
       assert {:ok, buffer} = Session.create_buffer(session, array)
 
@@ -42,7 +42,7 @@ defmodule OpenCL.BugRegressionTest do
     for session <- sessions do
       with_concurrency 10 do
         n_times 10 do
-          arr = Array.new(:char, [1])
+          arr = Array.new({:char, [1]})
           assert {:ok, buffer} = Session.create_buffer(session, arr)
           assert :ok = Session.execute_kernel(session, "add_one_uchar", 1, [buffer])
         end

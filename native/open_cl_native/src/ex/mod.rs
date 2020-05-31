@@ -21,6 +21,9 @@ pub use array_ex::{Array, ArrayEx};
 pub mod num_list;
 pub use num_list::{NumList, VecOps, VecProps};
 
+pub mod num_list_ex;
+pub use num_list_ex::NumListEx;
+
 pub mod num_type_ex;
 pub use num_type_ex::*;
 

@@ -1,7 +1,7 @@
 use crate::nif;
-use crate::nif::{Decoder, Encoder, ErrorT};
+use crate::nif::{Encoder, ErrorT};
 use crate::type_id;
-use crate::{NumExT, NumList, NumTypeEx, VecOps, VecProps};
+use crate::{NumEx, NumExT, NumList, NumListEx, NumTypeEx, VecOps, VecProps};
 use open_cl_core::ll::NumCastFrom;
 use open_cl_core::{NumberType, NumberTyped};
 // use rustler::{Decoder, Encoder, Error, ListIterator, NifStruct, Term};
@@ -10,6 +10,9 @@ use std::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 // NOTE: implement Bool when supported by elbow-jason/open_cl_rust
 // use open_cl_core::ll::numbers::Bool;
+
+// #[derive(nif::NifTuple)]
+// pub struct NumListEx(NumTypeEx, nif::ListIterator<'static>);
 
 #[derive(Debug)]
 pub struct Array {
@@ -172,9 +175,8 @@ fn _iter_to_vec<'a, T: NumExT + nif::Decoder<'a>>(
 }
 
 #[rustler::nif]
-fn array_new<'a>(num_type_ex: NumTypeEx, iter: nif::ListIterator<'a>) -> nif::Result<ArrayEx> {
-    let num_list = NumList::from_num_typed_iter(num_type_ex, iter)?;
-    Ok(ArrayEx::from(num_list))
+fn array_new(num_list_ex: NumListEx) -> nif::Result<ArrayEx> {
+    Ok(ArrayEx::from(num_list_ex.into_num_list()))
 }
 
 fn _push_term<'a, T, U>(num_list: &mut NumList, term: nif::Term<'a>) -> nif::Result<()>
@@ -264,21 +266,29 @@ fn array_extend_from_array(array: ArrayEx, other: ArrayEx) -> nif::Result<()> {
     }
 }
 
-fn _array_filled_with<'a, T: NumExT + Decoder<'a>>(
-    filler: nif::Term<'a>,
+fn _array_filled_with<T: NumCastFrom<NumEx> + NumExT>(
+    filler: NumEx,
     count: usize,
 ) -> nif::Result<ArrayEx> {
-    let num: T = filler.decode()?;
+    let num: T = T::num_cast_from(filler).unwrap();
     Ok(ArrayEx::filled_with::<T>(num, count))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 fn array_new_filled_with(
-    num_type_ex: NumTypeEx,
-    filler: nif::Term,
+    // num_type_ex: NumTypeEx,
+    // filler: nif::Term,
+    filler: NumEx,
     count: usize,
 ) -> nif::Result<ArrayEx> {
-    apply_num_type_ex1!(num_type_ex, _array_filled_with, [filler, count])
+    let tid = filler.number_type().number_type_id();
+    apply_type_id! {
+        type_id: tid,
+        // right_t: Noop,
+        func: _array_filled_with,
+        args: [filler, count],
+        default: Err(nif::error_string("Unmatched type_id during array_new_filled_with"))
+    }
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

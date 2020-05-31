@@ -11,7 +11,7 @@ defmodule OpenCL.ArrayTest do
   describe "new/1" do
     test "preserves order in conjuction with to_list" do
       content = [1, 2, 3]
-      array = Array.new(:uchar, content)
+      assert {:ok, array} = Array.new({:uchar, content})
       assert Array.to_list(array) == content
     end
   end
@@ -38,7 +38,7 @@ defmodule OpenCL.ArrayTest do
 
   describe "filled_with/1" do
     test "returns an array filled with `n` cound of `val`" do
-      array = Array.filled_with(:uchar, 3, 10)
+      assert {:ok, array} = Array.filled_with({:uchar, 3}, 10)
       content = Array.to_list(array)
       assert length(content) == 10
 
@@ -58,7 +58,7 @@ defmodule OpenCL.ArrayTest do
 
   describe "to_list/1" do
     test "returns the contents of the array as a list" do
-      array = Array.new(:char, [1, 2, 3])
+      assert {:ok, array} = Array.new({:char, [1, 2, 3]})
       assert Array.to_list(array) == [1, 2, 3]
     end
 
@@ -74,7 +74,7 @@ defmodule OpenCL.ArrayTest do
   describe "length/1" do
     test "matches the length of the content" do
       content = [1, 2, 3]
-      array = Array.new(:char, content)
+      assert {:ok, array} = Array.new({:char, content})
       assert Array.length(array) == length(content)
     end
 

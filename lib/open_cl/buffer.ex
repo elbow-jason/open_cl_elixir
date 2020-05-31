@@ -12,9 +12,9 @@ defmodule OpenCL.Buffer do
     def inspect(buffer, _) do
       nt = Buffer.number_type(buffer)
       len = Buffer.length(buffer)
-      mem_cfg = inspect(Buffer.mem_config(buffer))
-      devices = inspect(Buffer.available_devices(buffer))
-      "#OpenCL.Buffer<[number_type: #{nt}, length: #{len}, mem_config: #{mem_cfg}, available_devices: #{devices}]>"
+      # mem_cfg = inspect(Buffer.mem_config(buffer))
+      # devices = inspect(Buffer.available_devices(buffer))
+      "#OpenCL.Buffer<[number_type: #{nt}, length: #{len}]>"
     end
   end
 end

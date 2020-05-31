@@ -16,7 +16,7 @@ defmodule OpenCL.Native do
   @spec platform_default :: T.platform()
   def platform_default, do: err()
 
-  @spec platform_list_all :: T.output([T.platform()])
+  @spec platform_list_all :: [T.platform()]
   def platform_list_all, do: err()
 
   @spec platform_self_name(T.platform()) :: T.output(String.t())
@@ -473,12 +473,13 @@ defmodule OpenCL.Native do
   #   @type(dims :: dim() | {dim()} | {dim(), dim()}, {dim(), dim(), dim()})
 
   # ARRAY
-  @spec array_new(T.number_type(), [number(), ...]) :: T.array()
-  def array_new(_number_type, _numbers), do: err()
+  @spec array_new(T.number_typed_list()) :: T.array()
+  def array_new(_number_typed_list), do: err()
 
-  @spec array_new_filled_with(T.number_type(), number(), non_neg_integer()) :: T.array()
-  def array_new_filled_with(_number_type, _number, _count), do: err()
+  @spec array_new_filled_with(T.tagged_number(), T.len()) :: T.array()
+  def array_new_filled_with(_tagged_number, _count), do: err()
 
+  @spec array_data(T.array()) :: T.number_typed_list()
   def array_data(_array), do: err()
 
   def array_length(_array), do: err()
@@ -504,4 +505,5 @@ defmodule OpenCL.Native do
   def buffer_self_reference_count(_buffer), do: err()
 
   def buffer_self_available_devices(_buffer), do: err()
+
 end

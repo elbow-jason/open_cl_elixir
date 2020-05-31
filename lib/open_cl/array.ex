@@ -2,11 +2,29 @@ defmodule OpenCL.Array do
   use OpenCL.NativeStruct
   alias OpenCL.Array
   alias OpenCL.Native
+  alias OpenCL.Number
 
-  @spec new(Native.number_type(), [number, ...]) :: {:ok, t()} | {:error, any}
-  defdelegate new(number_type, numbers), to: Native, as: :array_new
+  @spec new(Native.number_typed_list()) :: {:ok, t()} | {:error, any}
+  def new(number_typed_list) do
+    case Native.array_new(number_typed_list) do
+      :invalid_variant ->
+        # if this is not an error we've got a bug
+        {:error, errors} = Number.check(number_typed_list)
+        {:error, errors}
+      %Array{} = array ->
+        {:ok, array}
+    end
+  end
 
-  defdelegate filled_with(number_type, number, count), to: Native, as: :array_new_filled_with
+  def filled_with(typed_number, count) do
+    case Native.array_new_filled_with(typed_number, count) do
+      :invalid_variant ->
+        # if this is not an error we've got a bug
+        {:error, error} = Number.check(typed_number)
+        {:error, error}
+      %Array{} = array -> {:ok, array}
+    end
+  end
 
   defdelegate to_list(array), to: Native, as: :array_data
 

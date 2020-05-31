@@ -20,7 +20,7 @@ defmodule OpenCLTest do
 
   test "all together now", %{sessions: sessions} do
     for session <- sessions do
-      assert %Array{} = array = Array.new(:uchar, [1, 1, 1])
+      assert {:ok, array} = Array.new({:uchar, [1, 1, 1]})
       assert {:ok, buffer} = Session.create_buffer(session, array)
       work_dims = 3
       :ok = Session.execute_kernel(session, "add_one_uchar", work_dims, [buffer])
@@ -32,7 +32,7 @@ defmodule OpenCLTest do
   test "works on 500k", %{sessions: sessions} do
     for session <- sessions do
       count = 500_000
-      assert %Array{} = array = Array.filled_with(:uchar, 0, count)
+      assert %Array{} = array = Array.filled_with({:uchar, 0}, count)
 
       assert {:ok, buffer} = Session.create_buffer(session, array)
       name = "add_one_uchar with 500k items"
@@ -52,7 +52,7 @@ defmodule OpenCLTest do
   test "works on 500k repeatedly", %{sessions: sessions} do
     for session <- sessions do
       count = 500_000
-      assert %Array{} = array = Array.filled_with(:uchar, 0, count)
+      assert %Array{} = array = Array.filled_with({:uchar, 0}, count)
 
       assert {:ok, buffer} = Session.create_buffer(session, array)
       name = "add_one_uchar with 500k items"
@@ -74,7 +74,7 @@ defmodule OpenCLTest do
     # This test needs a kernel that works on 3 dims
     for session <- sessions do
       count = 3 * 3
-      array = Array.filled_with(:char, 0, count)
+      assert {:ok, array} = Array.filled_with({:char, 0}, count)
 
       assert {:ok, buffer} = Session.create_buffer(session, array)
 
@@ -98,7 +98,7 @@ defmodule OpenCLTest do
   test "parallelism works", %{sessions: sessions} do
     for session <- sessions do
       count = 500
-      array = Array.filled_with(:char, 0, count)
+      assert {:ok, array} = Array.filled_with({:char, 0}, count)
       assert {:ok, buffer} = Session.create_buffer(session, array)
       work_dims = 500
 

@@ -1,19 +1,27 @@
 defmodule OpenCL.SourceHelpers do
-  alias OpenCL.Buffer
-  def to_type(x), do: to_string(x)
+  use OpenCL.T
 
-  def to_arg(name, :buffer, type), do: "__global #{to_type(type)} *#{name}"
+  def zero(t) when T.is_int_type(t), do: "0"
+  def zero(t) when T.is_float_type(t), do: "0.0"
+
+  def one(t) when T.is_int_type(t), do: "1"
+  def one(t) when T.is_float_type(t), do: "1.0"
+
+  def to_arg(name, :buffer, type), do: "__global #{type} *#{name}"
 
   def buffer_add_one(type) do
-    name = "add_one_#{type}"
+    name = "add_num_#{type}"
 
     src = """
-    __kernel void #{name}(__global #{to_type(type)} *data) {
-        data[get_global_id(0)] += 1;
+    __kernel void #{name}(
+      __global #{type} *data,
+      const #{type} num
+    ) {
+        data[get_global_id(0)] += num;
     }
     """
 
-    {name, [{:buffer, type}], src}
+    {name, [{type, :buffer}, {type, :number}], src}
   end
 
   def full do

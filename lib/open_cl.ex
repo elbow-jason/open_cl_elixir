@@ -20,7 +20,7 @@ defmodule OpenCL do
     IO.puts("session created: #{inspect(session)}\n")
     IO.puts("create an array of uchar...")
     # put a zero on the end to keep the charlist from printing
-    arr1 = OpenCL.Array.filled_with(:cl_uchar, 8, 100) |> OpenCL.Array.push(0)
+    {:ok, arr1} = OpenCL.Array.filled_with({:uchar, 8}, 100) |> OpenCL.Array.push(0)
     IO.puts("created uchar array: #{inspect(arr1)}")
     IO.puts("uchar data: #{inspect(OpenCL.Array.to_list(arr1))}\n")
 

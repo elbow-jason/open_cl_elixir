@@ -7,7 +7,6 @@ defmodule OpenCL.Session do
   alias OpenCL.CommandQueueOpts
   alias OpenCL.Session
   alias OpenCL.KernelOp
-  alias OpenCL.Work
   alias OpenCL.CommandQueueProps
 
   use OpenCL.T
@@ -39,7 +38,6 @@ defmodule OpenCL.Session do
   end
 
   defp handle_create(sessions, _opts) when is_list(sessions), do: {:ok, sessions}
-  defp handle_create({:ok, sessions}, _opts), do: {:ok, sessions}
   defp handle_create(:invalid_variant, opts), do: create_session_errors(opts)
   defp handle_create({:error, _} = err, _), do: err
 

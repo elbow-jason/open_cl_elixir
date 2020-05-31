@@ -2,13 +2,12 @@ defmodule OpenCL.SessionsCase do
   use ExUnit.CaseTemplate
 
   alias OpenCL.Platform
-  alias OpenCL.Device
   alias OpenCL.Session
   alias OpenCL.SourceHelpers
 
   setup do
-    assert platforms = Platform.list_all()
-
+    platforms = Platform.list_all()
+    assert length(platforms) > 0
     devices =
       Enum.flat_map(platforms, fn p ->
         Platform.list_all_devices(p)

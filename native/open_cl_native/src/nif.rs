@@ -1,6 +1,7 @@
 pub use rustler::{
     resource::ResourceArc, types::atom::Atom, Decoder, Encoder, Env, Error, ListIterator, NifMap,
-    NifResult as Result, NifStruct as Struct, NifStruct, NifUnitEnum, NifUntaggedEnum, Term,
+    NifRecord, NifResult as Result, NifStruct as Struct, NifStruct, NifTuple, NifUnitEnum,
+    NifUntaggedEnum, Term,
 };
 
 use crate::ex::StatusCodeErrorEx;
