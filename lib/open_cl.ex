@@ -26,19 +26,19 @@ defmodule OpenCL do
 
     # Array buffer
     IO.puts("create a buffer from the array...")
-    {:ok, buffer1} = OpenCL.Session.create_buffer(session, arr1)
+    {:ok, buffer1} = OpenCL.Session.create_buffer_from_data(session, arr1)
     IO.puts("created buffer from array: #{inspect(buffer1)}\n")
 
     IO.puts("create a buffer from a list...")
     nums = Enum.to_list(0..255)
     IO.puts("the list: #{inspect(nums)}")
-    {:ok, buffer2} = OpenCL.Session.create_buffer(session, :uchar, nums)
+    {:ok, buffer2} = OpenCL.Session.create_buffer_from_data(session, {:uchar, nums})
     IO.puts("created buffer from list: #{inspect(buffer2)}\n")
 
     IO.puts("create a buffer from a length (non_neg_integer)...")
     len = 148
     IO.puts("the length: #{inspect(len)}")
-    {:ok, buffer3} = OpenCL.Session.create_buffer(session, :uchar, len)
+    {:ok, buffer3} = OpenCL.Session.create_buffer_with_length(session, :uchar, len)
     IO.puts("created buffer from length: #{inspect(buffer3)}\n")
 
     IO.puts("execute a kernel...")

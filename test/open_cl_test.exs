@@ -21,9 +21,9 @@ defmodule OpenCLTest do
   test "all together now", %{sessions: sessions} do
     for session <- sessions do
       assert {:ok, array} = Array.new({:uchar, [1, 1, 1]})
-      assert {:ok, buffer} = Session.create_buffer(session, array)
+      assert {:ok, buffer} = Session.create_buffer_from_data(session, array)
       work_dims = 3
-      :ok = Session.execute_kernel(session, "add_one_uchar", work_dims, [buffer])
+      :ok = Session.execute_kernel(session, "add_num_uchar", work_dims, [buffer, {:uchar, 1}])
       assert {:ok, array} = Session.read_buffer(session, buffer)
       assert Array.to_list(array) == [2, 2, 2]
     end
@@ -32,13 +32,13 @@ defmodule OpenCLTest do
   test "works on 500k", %{sessions: sessions} do
     for session <- sessions do
       count = 500_000
-      assert %Array{} = array = Array.filled_with({:uchar, 0}, count)
+      assert {:ok, %Array{} = array} = Array.filled_with({:uchar, 0}, count)
 
-      assert {:ok, buffer} = Session.create_buffer(session, array)
-      name = "add_one_uchar with 500k items"
+      assert {:ok, buffer} = Session.create_buffer_from_data(session, array)
+      name = "add_num_uchar with 500k items"
 
       ProfilingHelpers.run(session, name, 1, 1, fn sess ->
-        assert :ok = Session.execute_kernel(sess, "add_one_uchar", count, [buffer])
+        assert :ok = Session.execute_kernel(sess, "add_num_uchar", count, [buffer, {:uchar, 1}])
       end)
 
       assert {:ok, array} = Session.read_buffer(session, buffer)
@@ -52,13 +52,13 @@ defmodule OpenCLTest do
   test "works on 500k repeatedly", %{sessions: sessions} do
     for session <- sessions do
       count = 500_000
-      assert %Array{} = array = Array.filled_with({:uchar, 0}, count)
+      assert {:ok, %Array{} = array} = Array.filled_with({:uchar, 0}, count)
 
-      assert {:ok, buffer} = Session.create_buffer(session, array)
-      name = "add_one_uchar with 500k items"
+      assert {:ok, buffer} = Session.create_buffer_from_data(session, array)
+      name = "add_num_uchar with 500k items"
 
       ProfilingHelpers.run(session, name, 200, 1, fn sess ->
-        assert :ok = Session.execute_kernel(sess, "add_one_uchar", count, [buffer])
+        assert :ok = Session.execute_kernel(sess, "add_num_uchar", count, [buffer, {:uchar, 1}])
       end)
 
       assert {:ok, array2} = Session.read_buffer(session, buffer)
@@ -76,19 +76,19 @@ defmodule OpenCLTest do
       count = 3 * 3
       assert {:ok, array} = Array.filled_with({:char, 0}, count)
 
-      assert {:ok, buffer} = Session.create_buffer(session, array)
+      assert {:ok, buffer} = Session.create_buffer_from_data(session, array)
 
       work_dims = {3, 3}
 
-      name = "add_one_uchar with 3 x 3 work"
+      name = "add_num_uchar with 3 x 3 work"
 
       ProfilingHelpers.run(session, name, 200, 1, fn sess ->
-        assert :ok = Session.execute_kernel(sess, "add_one_uchar", work_dims, [buffer])
+        assert :ok = Session.execute_kernel(sess, "add_num_uchar", work_dims, [buffer, {:uchar, 1}])
       end)
 
       assert {:ok, array2} = Session.read_buffer(session, buffer)
       nums = Array.to_list(array2)
-      # add_one_uchar nly uses get_global_id(0) which means
+      # add_one_uchar only uses get_global_id(0) which means
       # that only the first dimension is worked on
       assert nums == [200, 200, 200, 0, 0, 0, 0, 0, 0]
       assert length(nums) == 9
@@ -99,13 +99,13 @@ defmodule OpenCLTest do
     for session <- sessions do
       count = 500
       assert {:ok, array} = Array.filled_with({:char, 0}, count)
-      assert {:ok, buffer} = Session.create_buffer(session, array)
+      assert {:ok, buffer} = Session.create_buffer_from_data(session, array)
       work_dims = 500
 
-      name = "add_one_uchar with 500 items"
+      name = "add_num_uchar with 500 items"
 
       ProfilingHelpers.run(session, name, 100, 100, fn sess ->
-        assert :ok = Session.execute_kernel(sess, "add_one_uchar", work_dims, [buffer])
+        assert :ok = Session.execute_kernel(sess, "add_num_uchar", work_dims, [buffer, {:uchar, 1}])
       end)
 
       total_runs = 100 * 100

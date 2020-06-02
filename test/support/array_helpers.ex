@@ -24,7 +24,7 @@ defmodule OpenCL.Test.ArrayHelpers do
         expected = ArrayHelpers.convert(to_type, [1, 2, 3])
 
         assert {:ok, array} = Array.new({from_type, data})
-        casted_array = Array.type_cast(array, to_type)
+        assert {:ok, casted_array} = Array.type_cast(array, to_type)
         assert Array.type(casted_array) == to_type
         assert Array.to_list(casted_array) == expected
       end
@@ -137,7 +137,7 @@ defmodule OpenCL.Test.ArrayHelpers do
         other = unquote(other)
 
         assert {:ok, array} = Array.new({number_type, data})
-        other_array = ArrayHelpers.to_array(number_type, other)
+        assert %Array{} = other_array = ArrayHelpers.to_array(number_type, other)
         assert :ok = Array.extend(array, other_array)
         assert Array.to_list(array) == data ++ ArrayHelpers.to_list(other_array)
       end

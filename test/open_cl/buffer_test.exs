@@ -12,7 +12,7 @@ defmodule OpenCL.BufferTest do
       @number_type t
       test "#{t} buffer can be created from with a length", %{sessions: sessions} do
         for session <- sessions do
-          assert {:ok, buffer} = Session.create_buffer(session, @number_type, 10)
+          assert {:ok, buffer} = Session.create_buffer_with_length(session, @number_type, 10)
           assert Buffer.number_type(buffer) == @number_type
         end
       end

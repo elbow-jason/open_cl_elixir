@@ -14,8 +14,8 @@ defmodule OpenCL.BugRegressionTest do
 
       with_concurrency 10 do
         n_times 200 do
-          assert {:ok, buffer} = Session.create_buffer(session, array)
-          :ok = Session.execute_kernel(session, "add_one_uchar", count, [buffer])
+          assert {:ok, buffer} = Session.create_buffer_from_data(session, array)
+          :ok = Session.execute_kernel(session, "add_num_uchar", count, [buffer, {:uchar, 1}])
           {:ok, array2} = Session.read_buffer(session, buffer)
           Array.to_list(array2)
         end
@@ -28,7 +28,7 @@ defmodule OpenCL.BugRegressionTest do
       count = 500
       assert {:ok, array} = Array.filled_with({:char, 0}, count)
       assert %Array{} = array
-      assert {:ok, buffer} = Session.create_buffer(session, array)
+      assert {:ok, buffer} = Session.create_buffer_from_data(session, array)
 
       with_concurrency 100 do
         n_times 100 do
@@ -42,9 +42,9 @@ defmodule OpenCL.BugRegressionTest do
     for session <- sessions do
       with_concurrency 10 do
         n_times 10 do
-          arr = Array.new({:char, [1]})
-          assert {:ok, buffer} = Session.create_buffer(session, arr)
-          assert :ok = Session.execute_kernel(session, "add_one_uchar", 1, [buffer])
+          assert {:ok, arr} = Array.new({:char, [1]})
+          assert {:ok, buffer} = Session.create_buffer_from_data(session, arr)
+          assert :ok = Session.execute_kernel(session, "add_num_uchar", 1, [buffer, {:uchar, 1}])
         end
       end
     end

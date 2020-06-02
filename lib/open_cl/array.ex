@@ -54,7 +54,16 @@ defmodule OpenCL.Array do
 
   defdelegate type(array), to: Native, as: :array_number_type
 
-  defdelegate type_cast(array, number_type), to: Native, as: :array_cast
+  def type_cast(array, number_type) do
+    case Native.array_cast(array, number_type) do
+      %Array{} = array2 ->
+        {:ok, array2}
+      :invalid_variant ->
+        {:error, {:invalid_number_type, number_type}}
+      {:error, _} = err ->
+        err
+    end
+  end
 
   defimpl Inspect do
     alias OpenCL.Array

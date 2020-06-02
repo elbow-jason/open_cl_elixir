@@ -9,7 +9,7 @@ defmodule OpenCL.SourceHelpers do
 
   def to_arg(name, :buffer, type), do: "__global #{type} *#{name}"
 
-  def buffer_add_one(type) do
+  def add_num(type) do
     name = "add_num_#{type}"
 
     src = """
@@ -27,8 +27,8 @@ defmodule OpenCL.SourceHelpers do
   def full do
     OpenCL.T.number_types()
     |> Enum.flat_map(fn t ->
-      {_name, _, add_one_src} = buffer_add_one(t)
-      [add_one_src]
+      {_name, _, add_num_src} = add_num(t)
+      [add_num_src]
     end)
     |> Enum.join("\n")
   end

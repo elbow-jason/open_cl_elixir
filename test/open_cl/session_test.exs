@@ -20,7 +20,7 @@ defmodule OpenCL.SessionTest do
           assert zero in [0, 0.0]
           assert {:ok, array} = Array.filled_with({number_type, zero}, work_dims)
           Enum.each(sessions, fn session ->
-            assert {:ok, buffer} = Session.create_buffer(session, array)
+            assert {:ok, buffer} = Session.create_buffer_from_data(session, array)
 
             Enum.each(1..10, fn raw_num ->
               assert {:ok, casted_num} = OpenCL.Number.cast(number_type, raw_num)

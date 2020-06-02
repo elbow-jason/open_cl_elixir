@@ -275,11 +275,10 @@ defmodule OpenCL.Native do
 
   @spec session_self_create_buffer_from_list(
           Session.t(),
-          T.number_type(),
           T.num_list(),
           MemConfig.t() | nil
         ) :: T.output(Buffer.t())
-  def session_self_create_buffer_from_list(_session, _type, _list_of_numbers, _config), do: err()
+  def session_self_create_buffer_from_list(_session, _num_list, _config), do: err()
 
   @spec session_self_create_buffer_from_array(Session.t(), T.array(), MemConfig.t() | nil) ::
           T.output(Buffer.t())

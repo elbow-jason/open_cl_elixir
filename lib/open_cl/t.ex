@@ -13,7 +13,7 @@ defmodule OpenCL.T do
   @type len :: non_neg_integer()
   defguard is_len(len) when is_integer(len) and len > 0
 
-  @type num_list :: [number(), ...]
+  @type num_list :: {number_type(), [number(), ...]}
 
   @type array :: Array.t()
   @type buffer :: Buffer.t()

@@ -52,49 +52,75 @@ defmodule OpenCL.Session do
   method(:device)
   method(:create_copy)
 
-  def create_buffer(%Session{} = session, %Array{} = array) do
-    create_buffer(session, array, [])
-  end
+  # def create_buffer(%Session{} = session, %Array{} = array) do
+  #   create_buffer(session, array, [])
+  # end
 
-  def create_buffer(%Session{} = session, type, len) when T.is_len(len) do
-    create_buffer(session, type, len, [])
-  end
+  # def create_buffer_with_length(%Session{} = session, type, len) when T.is_len(len) do
+  #   create_buffer(session, type, len, [])
+  # end
 
-  def create_buffer(%Session{} = session, type, nums) when T.is_number_type(type) and is_list(nums) do
-    create_buffer(session, type, nums, [])
-  end
+  def create_buffer_from_data(session, array_or_num_list, opts \\ [])
 
-
-  def create_buffer(%Session{} = session, %Array{} = array, opts) when is_list(opts) do
+  def create_buffer_from_data(%Session{} = session, {t, nums}, opts) when T.is_number_type(t) and is_list(nums) do
     session
-    |> Native.session_self_create_buffer_from_array(array, native_mem_config(opts))
+    |> Native.session_self_create_buffer_from_list({t, nums}, native_mem_config(opts))
     |> case do
-      :invalid_variant ->
-        handle_create_buffer(:invalid_variant, Array.type(array), array, opts)
-
-      ret ->
-        handle_create_buffer(ret, nil, array, opts)
+      %Buffer{} = buffer ->
+        {:ok, buffer}
+      err ->
+        handle_create_buffer(err, {t, nums}, opts)
     end
   end
 
-  def create_buffer(%Session{} = session, type, len, opts) when T.is_len(len) and is_list(opts) do
+  def create_buffer_from_data(%Session{} = session, %Array{} = array, opts) when is_list(opts) do
+    session
+    |> Native.session_self_create_buffer_from_array(array, native_mem_config(opts))
+    |> case do
+      %Buffer{} = buffer ->
+        {:ok, buffer}
+      err ->
+        handle_create_buffer(err, array, opts)
+    end
+    # |> case do
+    #   :invalid_variant ->
+    #     handle_create_buffer(:invalid_variant, Array.type(array), array, opts)
+
+    #   ret ->
+    #     handle_create_buffer(ret, nil, array, opts)
+    # end
+  end
+
+  def create_buffer_with_length(%Session{} = session, type, len, opts \\ []) when T.is_len(len) and is_list(opts) do
     session
     |> Native.session_self_create_buffer_with_length(type, len, native_mem_config(opts))
-    |> handle_create_buffer(type, len, opts)
+    |> case do
+      %Buffer{} = buffer ->
+        {:ok, buffer}
+      err ->
+        handle_create_buffer(err, {type, len}, opts)
+    end
   end
 
-  def create_buffer(%Session{} = session, type, num_list, opts) when is_list(num_list) do
-    session
-    |> Native.session_self_create_buffer_from_list(type, num_list, native_mem_config(opts))
-    |> handle_create_buffer(type, num_list, opts)
-  end
 
-  defp handle_create_buffer(%Buffer{} = buffer, _, _, _), do: {:ok, buffer}
-  defp handle_create_buffer({:error, _} = error, _, _, _), do: error
-  defp handle_create_buffer(:invalid_variant, type, builder, opts) do
-    {:error, create_buffer_errors(type, builder, opts)}
+  defp handle_create_buffer({:error, _} = error, _, _), do: error
+  defp handle_create_buffer(:invalid_variant, builder, opts) do
+    {:error, create_buffer_errors(builder, opts)}
   end
+  defp create_buffer_errors(%Array{} = data, opts) do
+    mem_config = MemConfig.build(opts)
+    type = Array.type(data)
+    len_or_data_errors(data) ++
+      number_type_errors(type) ++
+      MemConfig.errors(mem_config)
+  end
+  defp create_buffer_errors({type, data}, opts) do
+    mem_config = MemConfig.build(opts)
 
+    len_or_data_errors(data) ++
+      number_type_errors(type) ++
+      MemConfig.errors(mem_config)
+  end
 
   def write_buffer(%Session{} = session, %Buffer{} = buffer, %Array{} = array, opts \\ []) do
     case Native.session_self_write_array_to_buffer(session, buffer, array, native_cq_opts(opts)) do

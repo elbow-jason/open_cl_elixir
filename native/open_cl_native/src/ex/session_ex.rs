@@ -4,7 +4,7 @@ use crate::nif::ErrorT;
 use crate::traits::NativeWrapper;
 use crate::{
     ArrayEx, BufferEx, CommandQueueOptionsEx, CommandQueuePropEx, DeviceEx, KernelOpEx,
-    MemConfigEx, NumExT, NumList, NumTypeEx,
+    MemConfigEx, NumExT, NumList, NumListEx, NumTypeEx,
 };
 // use open_cl_core::ll::cl::cl_mem;
 use open_cl_core::{
@@ -132,11 +132,10 @@ pub fn session_self_create_buffer_with_length(
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn session_self_create_buffer_from_list<'a>(
     session: SessionEx,
-    num_type_ex: NumTypeEx,
-    iter: nif::ListIterator<'a>,
+    num_list_ex: NumListEx,
     config: MemConfigEx,
 ) -> nif::Result<BufferEx> {
-    let list = NumList::from_num_typed_iter(num_type_ex, iter)?;
+    let list: NumList = num_list_ex.into_num_list();
     let mem_config = build_mem_config(config, &list);
     apply_type_id! {
         type_id: list.tid(),
