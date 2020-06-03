@@ -17,13 +17,8 @@ defmodule OpenCL.Array do
   end
 
   def filled_with(typed_number, count) do
-    case Native.array_new_filled_with(typed_number, count) do
-      :invalid_variant ->
-        # if this is not an error we've got a bug
-        {:error, error} = Number.check(typed_number)
-        {:error, error}
-      %Array{} = array -> {:ok, array}
-    end
+    array = Native.array_new_filled_with(typed_number, count)
+    {:ok, array}
   end
 
   defdelegate to_list(array), to: Native, as: :array_data

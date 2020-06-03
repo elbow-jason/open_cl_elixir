@@ -181,13 +181,6 @@ defmodule OpenCL.Session do
     |> MemConfig.to_native()
   end
 
-  defp create_buffer_errors(type, len_or_data, opts) do
-    mem_config = MemConfig.build(opts)
-
-    len_or_data_errors(len_or_data) ++
-      number_type_errors(type) ++
-      MemConfig.errors(mem_config)
-  end
 
   defp write_buffer_errors(opts) do
     command_queue_opts_error(opts)

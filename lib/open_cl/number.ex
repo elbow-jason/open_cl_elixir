@@ -128,40 +128,45 @@ defmodule OpenCL.Number do
   def min(:double), do: @min_long
   def min(t) when T.is_unsigned_int_type(t), do: 0
   # char
-  def cast(:char, n) when is_char(n), do: {:ok, n}
-  def cast(:char, n) when is_float(n) and is_char_castable(n), do: float_to_integer(n)
+  def cast(:char, n) when is_char(n), do: {:ok, {:char, n}}
+  def cast(:char, n) when is_float(n) and is_char_castable(n), do: {:ok, {:char, float_to_integer(n)}}
   # uchar
-  def cast(:uchar, n) when is_uchar(n), do: {:ok, n}
-  def cast(:uchar, n) when is_float(n) and is_uchar_castable(n), do: float_to_integer(n)
+  def cast(:uchar, n) when is_uchar(n), do: {:ok, {:uchar, n}}
+  def cast(:uchar, n) when is_float(n) and is_uchar_castable(n), do: {:ok, {:uchar, float_to_integer(n)}}
   # short
-  def cast(:short, n) when is_short(n), do: {:ok, n}
-  def cast(:short, n) when is_float(n) and is_short_castable(n), do: float_to_integer(n)
+  def cast(:short, n) when is_short(n), do: {:ok, {:short, n}}
+  def cast(:short, n) when is_float(n) and is_short_castable(n), do: {:ok, {:short, float_to_integer(n)}}
   # ushort
-  def cast(:ushort, n) when is_ushort(n), do: {:ok, n}
-  def cast(:ushort, n) when is_float(n) and is_ushort_castable(n), do: float_to_integer(n)
+  def cast(:ushort, n) when is_ushort(n), do: {:ok, {:ushort, n}}
+  def cast(:ushort, n) when is_float(n) and is_ushort_castable(n), do: {:ok, {:ushort, float_to_integer(n)}}
   # int
-  def cast(:int, n) when is_int(n), do: {:ok, n}
-  def cast(:int, n) when is_float(n) and is_int_castable(n), do: float_to_integer(n)
+  def cast(:int, n) when is_int(n), do: {:ok, {:int, n}}
+  def cast(:int, n) when is_float(n) and is_int_castable(n), do: {:ok, {:int, float_to_integer(n)}}
   # uint
-  def cast(:uint, n) when is_uint(n), do: {:ok, n}
-  def cast(:uint, n) when is_float(n) and is_uint_castable(n), do: float_to_integer(n)
+  def cast(:uint, n) when is_uint(n), do: {:ok, {:uint, n}}
+  def cast(:uint, n) when is_float(n) and is_uint_castable(n), do: {:ok, {:uint, float_to_integer(n)}}
   # long
-  def cast(:long, n) when is_long(n), do: {:ok, n}
-  def cast(:long, n) when is_float(n) and is_long_castable(n), do: float_to_integer(n)
+  def cast(:long, n) when is_long(n), do: {:ok, {:long, n}}
+  def cast(:long, n) when is_float(n) and is_long_castable(n), do: {:ok, {:long, float_to_integer(n)}}
   # ulong
-  def cast(:ulong, n) when is_ulong(n), do: {:ok, n}
-  def cast(:ulong, n) when is_float(n) and is_ulong_castable(n), do: float_to_integer(n)
+  def cast(:ulong, n) when is_ulong(n), do: {:ok, {:ulong, n}}
+  def cast(:ulong, n) when is_float(n) and is_ulong_castable(n), do: {:ok, {:ulong, float_to_integer(n)}}
   # size_t
-  def cast(:size_t, n) when is_size_t(n), do: {:ok, n}
-  def cast(:size_t, n) when is_float(n) and is_size_t_castable(n), do: float_to_integer(n)
+  def cast(:size_t, n) when is_size_t(n), do: {:ok, {:size_t, n}}
+  def cast(:size_t, n) when is_float(n) and is_size_t_castable(n), do: {:ok, {:size_t, float_to_integer(n)}}
   # float
-  def cast(:float, n) when is_float32(n), do: {:ok, n}
-  def cast(:float, n) when is_integer(n) and is_float32_castable(n), do: integer_to_float(n)
+  def cast(:float, n) when is_float32(n), do: {:ok, {:float, n}}
+  def cast(:float, n) when is_integer(n) and is_float32_castable(n), do: {:ok, {:float, integer_to_float(n)}}
   # double
-  def cast(:double, n) when is_double(n), do: {:ok, n}
-  def cast(:double, n) when is_integer(n) and is_double_castable(n), do: integer_to_float(n)
+  def cast(:double, n) when is_double(n), do: {:ok, {:double, n}}
+  def cast(:double, n) when is_integer(n) and is_double_castable(n), do: {:ok, {:double, integer_to_float(n)}}
   # everything else
-  def cast(t, n), do: {:error, {:not_castable, t, n}}
+
+  def cast(t, nums) when T.is_number_type(t) and is_list(nums) do
+    cast_list(t, nums, [])
+  end
+
+  def cast(t, n), do: {:error, {:not_castable, {t, n}}}
 
   def cast!(t, n) do
     case cast(t, n) do
@@ -183,12 +188,23 @@ defmodule OpenCL.Number do
   def is_castable?(:double, n), do: is_double_castable(n)
   def is_castable?(_, _), do: false
 
+  defp cast_list(t, [], acc) do
+    {:ok, {t, Enum.reverse(acc)}}
+  end
+  defp cast_list(t, [head | tail], acc) do
+    case cast(t, head) do
+      {:ok, {^t, casted}} -> cast_list(t, tail, [casted | acc])
+      {:error, _} = err -> err
+    end
+  end
+
+
   defp float_to_integer(n) when is_float(n) do
-    {:ok, n |> Float.round() |> trunc()}
+    n |> Float.round() |> trunc()
   end
 
   defp integer_to_float(n) when is_integer(n) do
-    {:ok, n * 1.0}
+    n * 1.0
   end
 
   def check({t, n}), do: do_check(t, n)

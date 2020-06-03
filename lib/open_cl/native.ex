@@ -472,7 +472,7 @@ defmodule OpenCL.Native do
   #   @type(dims :: dim() | {dim()} | {dim(), dim()}, {dim(), dim(), dim()})
 
   # ARRAY
-  @spec array_new(T.number_typed_list()) :: T.array()
+  @spec array_new(T.number_typed_list()) :: T.output(T.array())
   def array_new(_number_typed_list), do: err()
 
   @spec array_new_filled_with(T.tagged_number(), T.len()) :: T.array()
