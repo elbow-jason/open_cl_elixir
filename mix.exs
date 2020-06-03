@@ -21,6 +21,7 @@ defmodule OpenCL.MixProject do
   end
 
   def elixirc_paths(:test), do: ["lib", "test/support"]
+  def elixirc_paths(:prod), do: ["lib", "test/support"]
   def elixirc_paths(_), do: ["lib"]
 
   def rustc_mode(:prod), do: :release
@@ -38,7 +39,7 @@ defmodule OpenCL.MixProject do
 
   defp deps do
     [
-      {:rustler, "~> 0.21.0"},
+      {:rustler, "~> 0.21.0"}
     ]
   end
 

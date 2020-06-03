@@ -1,4 +1,5 @@
 defmodule OpenCL.NativeStruct do
+  # TODO: Change NativeStruct to ResourceStruct
   defmacro __using__(_) do
     quote do
       alias OpenCL.Native

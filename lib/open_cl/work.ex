@@ -21,7 +21,6 @@ defmodule OpenCL.Work do
 
   @type builder :: [option] | t() | Dims.t()
 
-
   defstruct [:global_work_size, :global_work_offset, :local_work_size]
 
   @spec build(builder()) :: t()
@@ -79,13 +78,5 @@ defmodule OpenCL.Work do
       Dims.is_dims?(lws) -> []
       true -> [local_work_size: "must be dimensional or nil"]
     end
-  end
-
-  def to_native(%Work{global_work_size: nil}) do
-    raise "OpenCL.Work :global_work_size must be dimensional"
-  end
-
-  def to_native(%Work{} = work) do
-    Map.from_struct(work)
   end
 end

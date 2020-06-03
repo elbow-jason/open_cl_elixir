@@ -1,8 +1,7 @@
-use opencl_core::ll::CommandQueueProperties;
+use crate::nif;
+use open_cl_core::CommandQueueProperties;
 
-use rustler::{NifUnitEnum};
-
-#[derive(NifUnitEnum)]
+#[derive(nif::NifUnitEnum)]
 pub enum CommandQueuePropEx {
     OutOfOrderExecution,
     ProfilingEnabled,

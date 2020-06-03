@@ -1,100 +1,90 @@
 defmodule OpenCL.Native do
   use Rustler, otp_app: :open_cl, crate: :open_cl_native
+  use OpenCL.T
+  #   alias OpenCL.Array
+  #   alias OpenCL.Device
+  #   alias OpenCL.Platform
 
-  alias OpenCL.Array
-  alias OpenCL.Device
-  alias OpenCL.Platform
-  alias OpenCL.Buffer
-  alias OpenCL.MemConfig
-  alias OpenCL.KernelOp
-  alias OpenCL.CommandQueueProps
+  #   alias OpenCL.Buffer
+  #   alias OpenCL.MemConfig
+  #   alias OpenCL.KernelOp
+  #   alias OpenCL.CommandQueueProps
 
   import OpenCL.NifNotLoadedError, only: [err: 0]
 
-  @type resource_ref :: reference()
-
-  @type output(item) :: {:ok, item} | {:error, String.t()} | :invalid_variant
-
-  @type side_effect_output :: :ok | {:error, String.t()} | :invalid_variant
-
-  @type number_type :: :u8 | :i8 | :u16 | :i16 | :u32 | :i32 | :f32 | :u64 | :i64 | :f64
-
   # PLATFORM
-  @spec platform_default :: Platform.t()
+  @spec platform_default :: T.platform()
   def platform_default, do: err()
 
-  @spec platform_list_all :: output([Platform.t()])
+  @spec platform_list_all :: [T.platform()]
   def platform_list_all, do: err()
 
-  @spec platform_self_name(Platform.t()) :: output(String.t())
+  @spec platform_self_name(T.platform()) :: T.output(String.t())
   def platform_self_name(_platform), do: err()
 
-  @spec platform_self_version(Platform.t()) :: output(String.t())
+  @spec platform_self_version(T.platform()) :: T.output(String.t())
   def platform_self_version(_platform), do: err()
 
-  @spec platform_self_profile(Platform.t()) :: output(String.t())
+  @spec platform_self_profile(T.platform()) :: T.output(String.t())
   def platform_self_profile(_platform), do: err()
 
-  @spec platform_self_vendor(Platform.t()) :: output(String.t())
+  @spec platform_self_vendor(T.platform()) :: T.output(String.t())
   def platform_self_vendor(_platform), do: err()
 
-  @spec platform_self_extensions(Platform.t()) :: output(String.t())
+  @spec platform_self_extensions(T.platform()) :: T.output(String.t())
   def platform_self_extensions(_platform), do: err()
 
-  @spec platform_list_all_devices(Platform.t()) :: output([Device.t()])
+  @spec platform_list_all_devices(T.platform()) :: T.output([Device.t()])
   def platform_list_all_devices(_platform), do: err()
 
-  @spec platform_list_default_devices(Platform.t()) :: output([Device.t()])
+  @spec platform_list_default_devices(T.platform()) :: T.output([Device.t()])
   def platform_list_default_devices(_platform), do: err()
 
-  @spec platform_list_cpu_devices(Platform.t()) :: output([Device.t()])
+  @spec platform_list_cpu_devices(T.platform()) :: T.output([Device.t()])
   def platform_list_cpu_devices(_platform), do: err()
 
-  @spec platform_list_gpu_devices(Platform.t()) :: output([Device.t()])
+  @spec platform_list_gpu_devices(T.platform()) :: T.output([Device.t()])
   def platform_list_gpu_devices(_platform), do: err()
 
-  @spec platform_list_accelerator_devices(Platform.t()) :: output([Device.t()])
+  @spec platform_list_accelerator_devices(T.platform()) :: T.output([Device.t()])
   def platform_list_accelerator_devices(_platform), do: err()
 
-  @spec platform_list_custom_devices(Platform.t()) :: output([Device.t()])
+  @spec platform_list_custom_devices(T.platform()) :: T.output([Device.t()])
   def platform_list_custom_devices(_platform), do: err()
 
-  #   @spec platform_self_cpu_devices(Platform.t()) :: output([Device.t()])
-  #   def platform_self_cpu_devices(_platform), do: err()
+  @spec platform_self_cpu_devices(T.platform()) :: T.output([Device.t()])
+  def platform_self_cpu_devices(_platform), do: err()
 
-  #   @spec platform_self_gpu_devices(Platform.t()) :: output([Device.t()])
-  #   def platform_self_gpu_devices(_platform), do: err()
+  @spec platform_self_gpu_devices(T.platform()) :: T.output([Device.t()])
+  def platform_self_gpu_devices(_platform), do: err()
 
-  #   @spec platform_self_accelerator_devices(Platform.t()) :: output([Device.t()])
-  #   def platform_self_accelerator_devices(_platform), do: err()
+  @spec platform_self_accelerator_devices(T.platform()) :: T.output([Device.t()])
+  def platform_self_accelerator_devices(_platform), do: err()
 
-  #   @spec platform_self_custom_devices(Platform.t()) :: output([Device.t()])
-  #   def platform_self_custom_devices(_platform), do: err()
+  @spec platform_self_custom_devices(T.platform()) :: T.output([Device.t()])
+  def platform_self_custom_devices(_platform), do: err()
 
-  #   # DEVICE
-  #   @spec device_default :: Device.t()
-  #   def device_default, do: err()
-
-  @spec device_self_is_usable(Device.t()) :: boolean()
-  def device_self_is_usable(_device), do: err()
+  # DEVICE
+  @spec device_default :: Device.t()
+  def device_default, do: err()
 
   # device string
-  @spec device_self_name(Device.t()) :: output(String.t())
+  @spec device_self_name(Device.t()) :: T.output(String.t())
   def device_self_name(_device), do: err()
 
-  @spec device_self_version(Device.t()) :: output(String.t())
+  @spec device_self_version(Device.t()) :: T.output(String.t())
   def device_self_version(_device), do: err()
 
-  @spec device_self_opencl_c_version(Device.t()) :: output(String.t())
+  @spec device_self_opencl_c_version(Device.t()) :: T.output(String.t())
   def device_self_opencl_c_version(_device), do: err()
 
-  @spec device_self_profile(Device.t()) :: output(String.t())
+  @spec device_self_profile(Device.t()) :: T.output(String.t())
   def device_self_profile(_device), do: err()
 
-  @spec device_self_vendor(Device.t()) :: output(String.t())
+  @spec device_self_vendor(Device.t()) :: T.output(String.t())
   def device_self_vendor(_device), do: err()
 
-  @spec device_self_driver_version(Device.t()) :: output(String.t())
+  @spec device_self_driver_version(Device.t()) :: T.output(String.t())
   def device_self_driver_version(_device), do: err()
 
   # device u32
@@ -238,6 +228,7 @@ defmodule OpenCL.Native do
   @spec device_self_profiling_timer_resolution(Device.t()) :: non_neg_integer()
   def device_self_profiling_timer_resolution(_device), do: err()
 
+  # TODO: Fix device_self_max_work_item_sizes typespec
   @spec device_self_max_work_item_sizes(Device.t()) :: [non_neg_integer()]
   def device_self_max_work_item_sizes(_device), do: err()
 
@@ -252,250 +243,242 @@ defmodule OpenCL.Native do
   @spec device_self_partition_affinity_domain(Device.t()) :: [partition_affinity_domain()]
   def device_self_partition_affinity_domain(_device), do: err()
 
-  # # device flags
-  # @spec device_self_max_work_item_sizes(Device.t()) :: integer()
-  # def device_self_max_work_item_sizes(_device), do: err()
+  @spec device_self_device_type(Device.t()) :: integer()
+  def device_self_device_type(_device), do: err()
 
-  # @spec device_self_partition_affinity_domain(Device.t()) :: integer()
-  # def device_self_partition_affinity_domain(_device), do: err()
+  @spec device_self_global_mem_cache_type(Device.t()) :: integer()
+  def device_self_global_mem_cache_type(_device), do: err()
 
-  # @spec device_self_device_type(Device.t()) :: integer()
-  # def device_self_device_type(_device), do: err()
+  @spec device_self_local_mem_type(Device.t()) :: integer()
+  def device_self_local_mem_type(_device), do: err()
 
-  # @spec device_self_global_mem_cache_type(Device.t()) :: integer()
-  # def device_self_global_mem_cache_type(_device), do: err()
+  # device
+  @spec device_self_platform(Device.t()) :: T.platform()
+  def device_self_platform(_device), do: err()
 
-  # @spec device_self_local_mem_type(Device.t()) :: integer()
-  # def device_self_local_mem_type(_device), do: err()
-
-  # # device
-  # @spec device_self_platform(Device.t()) :: Platform.t()
-  # def device_self_platform(_device), do: err()
-
-  #   # # CONTEXT
-  #   # @spec context_create(Device.t()) :: Native.output(Context.t())
-  #   # def context_create(_device), do: err()
-
-  #   # # COMMAND_QUEUE
-  #   # @spec command_queue_create(Context.t(), Device.t()) :: output(CommandQueue.t())
-  #   # def command_queue_create(_context, _device), do: err()
-
-  #   # @spec command_queue_self_context(CommandQueue.t()) :: output(Context.t())
-  #   # def command_queue_self_context(_command_queue), do: err()
-
-  #   # @spec command_queue_self_device(CommandQueue.t()) :: output(Device.t())
-  #   # def command_queue_self_device(_command_queue), do: err()
-
-  #   # @spec command_queue_self_reference_count(CommandQueue.t()) :: output(non_neg_integer())
-  #   # def command_queue_self_reference_count(_command_queue), do: err()
+  # SESSION
 
   @spec session_create_with_devices([Device.t()], String.t(), CommandQueueProps.t()) ::
-          output(Session.t())
+          T.output(Session.t())
   def session_create_with_devices(_devices, _src, _props), do: err()
 
-  @spec session_create(String.t(), CommandQueueProps.t()) :: output(Session.t())
+  @spec session_create(String.t(), CommandQueueProps.t()) :: T.output(Session.t())
   def session_create(_src, _props), do: err()
 
-  @spec session_self_create_copy(Session.t()) :: output(Session.t())
+  @spec session_self_create_copy(Session.t()) :: T.output(Session.t())
   def session_self_create_copy(_session), do: err()
 
   @spec session_self_device(Session.t()) :: [Device.t()]
   def session_self_device(_session), do: err()
 
-  @type data :: Array.t() | list(number_type())
-
   @type len :: non_neg_integer()
 
-  @spec session_self_create_buffer(Session.t(), number_type(), len() | data(), MemConfig.native()) ::
-          output(Buffer.t())
-  def session_self_create_buffer(_session, _type, _len_or_data, _config), do: err()
+  @spec session_self_create_buffer_from_list(
+          Session.t(),
+          T.num_list(),
+          MemConfig.t() | nil
+        ) :: T.output(Buffer.t())
+  def session_self_create_buffer_from_list(_session, _num_list, _config), do: err()
+
+  @spec session_self_create_buffer_from_array(Session.t(), T.array(), MemConfig.t() | nil) ::
+          T.output(Buffer.t())
+  def session_self_create_buffer_from_array(_session, _array, _config), do: err()
+
+  @spec session_self_create_buffer_with_length(
+          Session.t(),
+          T.number_type(),
+          T.len(),
+          MemConfig.t() | nil
+        ) :: T.output(Buffer.t())
+  def session_self_create_buffer_with_length(_session, _type, _len, _config), do: err()
 
   @spec session_self_write_array_to_buffer(
           Session.t(),
           Buffer.t(),
-          Array.t(),
+          T.array(),
           CommandQueueOpts.native()
         ) ::
-          output({})
+          T.output({})
   def session_self_write_array_to_buffer(_session, _buffer, _array, _cq_opts), do: err()
 
   @spec session_self_read_buffer(Session.t(), Buffer.t(), CommandQueueOpts.native()) ::
-          output(Array.t())
+          T.output(Array.t())
   def session_self_read_buffer(_session, _buffer, _cq_opts), do: err()
 
-  @spec session_self_execute_kernel_operation(Session.t(), KernelOp.t()) :: output({})
+  @spec session_self_execute_kernel_operation(Session.t(), KernelOp.t()) :: T.output({})
   def session_self_execute_kernel_operation(_session, _kernel_op), do: err()
 
-  #   @spec session_self_device_name(Session.t()) :: output(String.t())
+  #   @spec session_self_device_name(Session.t()) :: T.output(String.t())
   #   def session_self_device_name(_session), do: err()
 
-  #   @spec session_self_device_opencl_c_version(Session.t()) :: output(String.t())
+  #   @spec session_self_device_opencl_c_version(Session.t()) :: T.output(String.t())
   #   def session_self_device_opencl_c_version(_session), do: err()
 
-  #   @spec session_self_device_profile(Session.t()) :: output(String.t())
+  #   @spec session_self_device_profile(Session.t()) :: T.output(String.t())
   #   def session_self_device_profile(_session), do: err()
 
-  #   @spec session_self_device_vendor(Session.t()) :: output(String.t())
+  #   @spec session_self_device_vendor(Session.t()) :: T.output(String.t())
   #   def session_self_device_vendor(_session), do: err()
 
-  #   @spec session_self_device_version(Session.t()) :: output(String.t())
+  #   @spec session_self_device_version(Session.t()) :: T.output(String.t())
   #   def session_self_device_version(_session), do: err()
 
-  #   @spec session_self_device_driver_version(Session.t()) :: output(String.t())
+  #   @spec session_self_device_driver_version(Session.t()) :: T.output(String.t())
   #   def session_self_device_driver_version(_session), do: err()
 
-  #   @spec session_self_device_address_bits(Session.t()) :: output(non_neg_integer())
+  #   @spec session_self_device_address_bits(Session.t()) :: T.output(non_neg_integer())
   #   def session_self_device_address_bits(_session), do: err()
 
-  #   @spec session_self_device_global_mem_cacheline_size(Session.t()) :: output(non_neg_integer())
+  #   @spec session_self_device_global_mem_cacheline_size(Session.t()) :: T.output(non_neg_integer())
   #   def session_self_device_global_mem_cacheline_size(_session), do: err()
 
-  #   @spec session_self_device_max_clock_frequency(Session.t()) :: output(non_neg_integer())
+  #   @spec session_self_device_max_clock_frequency(Session.t()) :: T.output(non_neg_integer())
   #   def session_self_device_max_clock_frequency(_session), do: err()
 
-  #   @spec session_self_device_max_compute_units(Session.t()) :: output(non_neg_integer())
+  #   @spec session_self_device_max_compute_units(Session.t()) :: T.output(non_neg_integer())
   #   def session_self_device_max_compute_units(_session), do: err()
 
-  #   @spec session_self_device_max_constant_args(Session.t()) :: output(non_neg_integer())
+  #   @spec session_self_device_max_constant_args(Session.t()) :: T.output(non_neg_integer())
   #   def session_self_device_max_constant_args(_session), do: err()
 
-  #   @spec session_self_device_max_read_image_args(Session.t()) :: output(non_neg_integer())
+  #   @spec session_self_device_max_read_image_args(Session.t()) :: T.output(non_neg_integer())
   #   def session_self_device_max_read_image_args(_session), do: err()
 
-  #   @spec session_self_device_max_samplers(Session.t()) :: output(non_neg_integer())
+  #   @spec session_self_device_max_samplers(Session.t()) :: T.output(non_neg_integer())
   #   def session_self_device_max_samplers(_session), do: err()
 
-  #   @spec session_self_device_max_work_item_dimensions(Session.t()) :: output(non_neg_integer())
+  #   @spec session_self_device_max_work_item_dimensions(Session.t()) :: T.output(non_neg_integer())
   #   def session_self_device_max_work_item_dimensions(_session), do: err()
 
-  #   @spec session_self_device_max_write_image_args(Session.t()) :: output(non_neg_integer())
+  #   @spec session_self_device_max_write_image_args(Session.t()) :: T.output(non_neg_integer())
   #   def session_self_device_max_write_image_args(_session), do: err()
 
-  #   @spec session_self_device_mem_base_addr_align(Session.t()) :: output(non_neg_integer())
+  #   @spec session_self_device_mem_base_addr_align(Session.t()) :: T.output(non_neg_integer())
   #   def session_self_device_mem_base_addr_align(_session), do: err()
 
-  #   @spec session_self_device_min_data_type_align_size(Session.t()) :: output(non_neg_integer())
+  #   @spec session_self_device_min_data_type_align_size(Session.t()) :: T.output(non_neg_integer())
   #   def session_self_device_min_data_type_align_size(_session), do: err()
 
-  #   @spec session_self_device_native_vector_width_char(Session.t()) :: output(non_neg_integer())
+  #   @spec session_self_device_native_vector_width_char(Session.t()) :: T.output(non_neg_integer())
   #   def session_self_device_native_vector_width_char(_session), do: err()
 
-  #   @spec session_self_device_native_vector_width_short(Session.t()) :: output(non_neg_integer())
+  #   @spec session_self_device_native_vector_width_short(Session.t()) :: T.output(non_neg_integer())
   #   def session_self_device_native_vector_width_short(_session), do: err()
 
-  #   @spec session_self_device_native_vector_width_int(Session.t()) :: output(non_neg_integer())
+  #   @spec session_self_device_native_vector_width_int(Session.t()) :: T.output(non_neg_integer())
   #   def session_self_device_native_vector_width_int(_session), do: err()
 
-  #   @spec session_self_device_native_vector_width_long(Session.t()) :: output(non_neg_integer())
+  #   @spec session_self_device_native_vector_width_long(Session.t()) :: T.output(non_neg_integer())
   #   def session_self_device_native_vector_width_long(_session), do: err()
 
-  #   @spec session_self_device_native_vector_width_float(Session.t()) :: output(non_neg_integer())
+  #   @spec session_self_device_native_vector_width_float(Session.t()) :: T.output(non_neg_integer())
   #   def session_self_device_native_vector_width_float(_session), do: err()
 
-  #   @spec session_self_device_native_vector_width_double(Session.t()) :: output(non_neg_integer())
+  #   @spec session_self_device_native_vector_width_double(Session.t()) :: T.output(non_neg_integer())
   #   def session_self_device_native_vector_width_double(_session), do: err()
 
-  #   @spec session_self_device_native_vector_width_half(Session.t()) :: output(non_neg_integer())
+  #   @spec session_self_device_native_vector_width_half(Session.t()) :: T.output(non_neg_integer())
   #   def session_self_device_native_vector_width_half(_session), do: err()
 
-  #   @spec session_self_device_partition_max_sub_devices(Session.t()) :: output(non_neg_integer())
+  #   @spec session_self_device_partition_max_sub_devices(Session.t()) :: T.output(non_neg_integer())
   #   def session_self_device_partition_max_sub_devices(_session), do: err()
 
-  #   @spec session_self_device_preferred_vector_width_char(Session.t()) :: output(non_neg_integer())
+  #   @spec session_self_device_preferred_vector_width_char(Session.t()) :: T.output(non_neg_integer())
   #   def session_self_device_preferred_vector_width_char(_session), do: err()
 
-  #   @spec session_self_device_preferred_vector_width_short(Session.t()) :: output(non_neg_integer())
+  #   @spec session_self_device_preferred_vector_width_short(Session.t()) :: T.output(non_neg_integer())
   #   def session_self_device_preferred_vector_width_short(_session), do: err()
 
-  #   @spec session_self_device_preferred_vector_width_int(Session.t()) :: output(non_neg_integer())
+  #   @spec session_self_device_preferred_vector_width_int(Session.t()) :: T.output(non_neg_integer())
   #   def session_self_device_preferred_vector_width_int(_session), do: err()
 
-  #   @spec session_self_device_preferred_vector_width_long(Session.t()) :: output(non_neg_integer())
+  #   @spec session_self_device_preferred_vector_width_long(Session.t()) :: T.output(non_neg_integer())
   #   def session_self_device_preferred_vector_width_long(_session), do: err()
 
-  #   @spec session_self_device_preferred_vector_width_float(Session.t()) :: output(non_neg_integer())
+  #   @spec session_self_device_preferred_vector_width_float(Session.t()) :: T.output(non_neg_integer())
   #   def session_self_device_preferred_vector_width_float(_session), do: err()
 
   #   @spec session_self_device_preferred_vector_width_double(Session.t()) ::
-  #           output(non_neg_integer())
+  #           T.output(non_neg_integer())
   #   def session_self_device_preferred_vector_width_double(_session), do: err()
 
-  #   @spec session_self_device_preferred_vector_width_half(Session.t()) :: output(non_neg_integer())
+  #   @spec session_self_device_preferred_vector_width_half(Session.t()) :: T.output(non_neg_integer())
   #   def session_self_device_preferred_vector_width_half(_session), do: err()
 
-  #   @spec session_self_device_vendor_id(Session.t()) :: output(non_neg_integer())
+  #   @spec session_self_device_vendor_id(Session.t()) :: T.output(non_neg_integer())
   #   def session_self_device_vendor_id(_session), do: err()
 
-  #   @spec session_self_device_available(Session.t()) :: output(boolean())
+  #   @spec session_self_device_available(Session.t()) :: T.output(boolean())
   #   def session_self_device_available(_session), do: err()
 
-  #   @spec session_self_device_compiler_available(Session.t()) :: output(boolean())
+  #   @spec session_self_device_compiler_available(Session.t()) :: T.output(boolean())
   #   def session_self_device_compiler_available(_session), do: err()
 
-  #   @spec session_self_device_endian_little(Session.t()) :: output(boolean())
+  #   @spec session_self_device_endian_little(Session.t()) :: T.output(boolean())
   #   def session_self_device_endian_little(_session), do: err()
 
-  #   @spec session_self_device_error_correction_support(Session.t()) :: output(boolean())
+  #   @spec session_self_device_error_correction_support(Session.t()) :: T.output(boolean())
   #   def session_self_device_error_correction_support(_session), do: err()
 
-  #   @spec session_self_device_host_unified_memory(Session.t()) :: output(boolean())
+  #   @spec session_self_device_host_unified_memory(Session.t()) :: T.output(boolean())
   #   def session_self_device_host_unified_memory(_session), do: err()
 
-  #   @spec session_self_device_image_support(Session.t()) :: output(boolean())
+  #   @spec session_self_device_image_support(Session.t()) :: T.output(boolean())
   #   def session_self_device_image_support(_session), do: err()
 
-  #   @spec session_self_device_linker_available(Session.t()) :: output(boolean())
+  #   @spec session_self_device_linker_available(Session.t()) :: T.output(boolean())
   #   def session_self_device_linker_available(_session), do: err()
 
-  #   @spec session_self_device_preferred_interop_user_sync(Session.t()) :: output(boolean())
+  #   @spec session_self_device_preferred_interop_user_sync(Session.t()) :: T.output(boolean())
   #   def session_self_device_preferred_interop_user_sync(_session), do: err()
 
-  #   @spec session_self_device_image2d_max_width(Session.t()) :: output(non_neg_integer())
+  #   @spec session_self_device_image2d_max_width(Session.t()) :: T.output(non_neg_integer())
   #   def session_self_device_image2d_max_width(_session), do: err()
 
-  #   @spec session_self_device_image2d_max_height(Session.t()) :: output(non_neg_integer())
+  #   @spec session_self_device_image2d_max_height(Session.t()) :: T.output(non_neg_integer())
   #   def session_self_device_image2d_max_height(_session), do: err()
 
-  #   @spec session_self_device_image3d_max_width(Session.t()) :: output(non_neg_integer())
+  #   @spec session_self_device_image3d_max_width(Session.t()) :: T.output(non_neg_integer())
   #   def session_self_device_image3d_max_width(_session), do: err()
 
-  #   @spec session_self_device_image3d_max_height(Session.t()) :: output(non_neg_integer())
+  #   @spec session_self_device_image3d_max_height(Session.t()) :: T.output(non_neg_integer())
   #   def session_self_device_image3d_max_height(_session), do: err()
 
-  #   @spec session_self_device_image3d_max_depth(Session.t()) :: output(non_neg_integer())
+  #   @spec session_self_device_image3d_max_depth(Session.t()) :: T.output(non_neg_integer())
   #   def session_self_device_image3d_max_depth(_session), do: err()
 
-  #   @spec session_self_device_image_max_buffer_size(Session.t()) :: output(non_neg_integer())
+  #   @spec session_self_device_image_max_buffer_size(Session.t()) :: T.output(non_neg_integer())
   #   def session_self_device_image_max_buffer_size(_session), do: err()
 
-  #   @spec session_self_device_image_max_array_size(Session.t()) :: output(non_neg_integer())
+  #   @spec session_self_device_image_max_array_size(Session.t()) :: T.output(non_neg_integer())
   #   def session_self_device_image_max_array_size(_session), do: err()
 
-  #   @spec session_self_device_max_parameter_size(Session.t()) :: output(non_neg_integer())
+  #   @spec session_self_device_max_parameter_size(Session.t()) :: T.output(non_neg_integer())
   #   def session_self_device_max_parameter_size(_session), do: err()
 
-  #   @spec session_self_device_max_work_group_size(Session.t()) :: output(non_neg_integer())
+  #   @spec session_self_device_max_work_group_size(Session.t()) :: T.output(non_neg_integer())
   #   def session_self_device_max_work_group_size(_session), do: err()
 
-  #   @spec session_self_device_printf_buffer_size(Session.t()) :: output(non_neg_integer())
+  #   @spec session_self_device_printf_buffer_size(Session.t()) :: T.output(non_neg_integer())
   #   def session_self_device_printf_buffer_size(_session), do: err()
 
-  #   @spec session_self_device_profiling_timer_resolution(Session.t()) :: output(non_neg_integer())
+  #   @spec session_self_device_profiling_timer_resolution(Session.t()) :: T.output(non_neg_integer())
   #   def session_self_device_profiling_timer_resolution(_session), do: err()
 
-  #   @spec session_self_device_max_work_item_sizes(Session.t()) :: output([non_neg_integer()])
+  #   @spec session_self_device_max_work_item_sizes(Session.t()) :: T.output([non_neg_integer()])
   #   def session_self_device_max_work_item_sizes(_session), do: err()
 
   #   @type dim :: non_neg_integer()
   #   @type(dims :: dim() | {dim()} | {dim(), dim()}, {dim(), dim(), dim()})
 
   # ARRAY
-  @spec array_new(number_type(), [number(), ...]) :: Array.t()
-  def array_new(_number_type, _numbers), do: err()
+  @spec array_new(T.number_typed_list()) :: T.output(T.array())
+  def array_new(_number_typed_list), do: err()
 
-  @spec array_new_filled_with(number_type(), number(), non_neg_integer()) :: Array.t()
-  def array_new_filled_with(_number_type, _number, _count), do: err()
+  @spec array_new_filled_with(T.tagged_number(), T.len()) :: T.array()
+  def array_new_filled_with(_tagged_number, _count), do: err()
 
+  @spec array_data(T.array()) :: T.number_typed_list()
   def array_data(_array), do: err()
 
   def array_length(_array), do: err()
@@ -512,12 +495,14 @@ defmodule OpenCL.Native do
 
   #   @type buffer_access :: :read_only | :write_only | :read_write
 
-  #   def buffer_build_from_array(_session, _dims, _number_type, _array, _access), do: err()
-
   def buffer_self_length(_buffer), do: err()
 
   def buffer_self_number_type(_buffer), do: err()
 
-  #   def buffer_reference_count(_buffer), do: err()
+  def buffer_self_mem_config(_buffer), do: err()
+
+  def buffer_self_reference_count(_buffer), do: err()
+
+  def buffer_self_available_devices(_buffer), do: err()
 
 end

@@ -1,30 +1,34 @@
 defmodule OpenCL.SourceHelpers do
-  alias OpenCL.Buffer
-  def to_type(:u8), do: "uchar"
-  def to_type(:i32), do: "int"
+  use OpenCL.T
 
-  def to_arg(name, :buffer, type), do: "__global #{to_type(type)} *#{name}"
+  def zero(t) when T.is_int_type(t), do: "0"
+  def zero(t) when T.is_float_type(t), do: "0.0"
 
-  def buffer_add_one(type) do
-    name = "add_one_#{type}"
+  def one(t) when T.is_int_type(t), do: "1"
+  def one(t) when T.is_float_type(t), do: "1.0"
+
+  def to_arg(name, :buffer, type), do: "__global #{type} *#{name}"
+
+  def add_num(type) do
+    name = "add_num_#{type}"
+
     src = """
-    __kernel void #{name}(__global #{to_type(type)} *data) {
-        data[get_global_id(0)] += 1;
+    __kernel void #{name}(
+      __global #{type} *data,
+      const #{type} num
+    ) {
+        data[get_global_id(0)] += num;
     }
     """
-    {name, [{:buffer, type}], src}
+
+    {name, [{type, :buffer}, {type, :number}], src}
   end
 
-  @types [
-    :u8,
-    :i32,
-  ]
-
   def full do
-    @types
+    OpenCL.T.number_types()
     |> Enum.flat_map(fn t ->
-      {_name, _, add_one_src} = buffer_add_one(t)
-      [add_one_src]
+      {_name, _, add_num_src} = add_num(t)
+      [add_num_src]
     end)
     |> Enum.join("\n")
   end

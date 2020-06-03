@@ -1,29 +1,23 @@
+use super::WrapperEx;
+use crate::nif;
+use crate::nif::ErrorT;
+use crate::traits::NativeWrapper;
+use crate::{
+    ArrayEx, BufferEx, CommandQueueOptionsEx, CommandQueuePropEx, DeviceEx, KernelOpEx,
+    MemConfigEx, NumExT, NumList, NumListEx, NumTypeEx,
+};
+// use open_cl_core::ll::cl::cl_mem;
+use open_cl_core::{
+    Buffer, BufferBuilder, CommandQueueOptions, CommandQueueProperties, Device, MemConfig,
+    NumberTypeError, NumberTyped, Session,
+};
 use std::fmt;
 
-use opencl_core::ll::utils;
-use opencl_core::{
-    Buffer, CommandQueueOptions, CommandQueueProperties, Device, MemConfig, Session,
-};
-// use opencl_core::ll::{DevicePtr};
-use rustler::resource::ResourceArc;
-use rustler::{Encoder, NifStruct};
-
-use super::{OutputEx, WrapperEx, WrapperExResource};
-
-use crate::traits::NativeWrapper;
-
-use crate::{
-    ArrayEx, BufferCreatorEx, BufferEx, CommandQueueOptionsEx, CommandQueuePropEx, DeviceEx,
-    KernelOpEx, MemConfigEx, NumberEx, NumberType, NumberTyped, RuntimeNumberList, NumberListEx,
-};
-
-impl WrapperExResource for Session {}
-
-#[derive(NifStruct)]
+#[derive(nif::NifStruct)]
 #[must_use]
 #[module = "OpenCL.Session"]
 pub struct SessionEx {
-    __native__: ResourceArc<WrapperEx<Session>>,
+    __native__: nif::ResourceArc<WrapperEx<Session>>,
     _unconstructable: (),
 }
 
@@ -57,14 +51,14 @@ fn wrap_sessions(sessions: Vec<Session>) -> Vec<SessionEx> {
 impl SessionEx {
     pub fn new(session: Session) -> SessionEx {
         SessionEx {
-            __native__: session.into_resource_arc(),
+            __native__: nif::ResourceArc::new(WrapperEx::new(session)),
             _unconstructable: (),
         }
     }
 
-    pub fn create(src: &str, props: Vec<CommandQueuePropEx>) -> OutputEx<Vec<SessionEx>> {
+    pub fn create(src: &str, props: Vec<CommandQueuePropEx>) -> nif::Result<Vec<SessionEx>> {
         let cq_props = parse_command_queue_props(props);
-        let hl_sessions: Vec<Session> = Session::create(src, cq_props)?;
+        let hl_sessions: Vec<Session> = Session::create(src, cq_props).map_err(|e| e.error())?;
         Ok(wrap_sessions(hl_sessions))
     }
 
@@ -72,10 +66,11 @@ impl SessionEx {
         src: &str,
         devices: &[DeviceEx],
         props: Vec<CommandQueuePropEx>,
-    ) -> OutputEx<Vec<SessionEx>> {
+    ) -> nif::Result<Vec<SessionEx>> {
         let cq_props = parse_command_queue_props(props);
         let hl_devices: Vec<Device> = devices.iter().map(|d| d.native().clone()).collect();
-        let hl_sessions: Vec<Session> = Session::create_with_devices(hl_devices, src, cq_props)?;
+        let hl_sessions: Vec<Session> =
+            Session::create_with_devices(hl_devices, src, cq_props).map_err(|e| e.error())?;
         Ok(wrap_sessions(hl_sessions))
     }
 
@@ -99,7 +94,7 @@ impl From<SessionEx> for Session {
 }
 
 #[rustler::nif]
-fn session_create(src: String, props: Vec<CommandQueuePropEx>) -> OutputEx<Vec<SessionEx>> {
+fn session_create(src: String, props: Vec<CommandQueuePropEx>) -> nif::Result<Vec<SessionEx>> {
     SessionEx::create(&src[..], props)
 }
 
@@ -108,7 +103,7 @@ fn session_create_with_devices(
     src: String,
     devices: Vec<DeviceEx>,
     props: Vec<CommandQueuePropEx>,
-) -> OutputEx<Vec<SessionEx>> {
+) -> nif::Result<Vec<SessionEx>> {
     SessionEx::create_with_devices(&src[..], &devices[..], props)
 }
 
@@ -118,104 +113,117 @@ fn session_self_device(session: SessionEx) -> DeviceEx {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn session_self_create_buffer(
+pub fn session_self_create_buffer_with_length(
     session: SessionEx,
-    number_type: NumberType,
-    creator_ex: BufferCreatorEx,
+    num_type_ex: NumTypeEx,
+    length: usize,
     config: MemConfigEx,
-) -> OutputEx<BufferEx> {
-    creator_ex.check_matches_type(number_type)?;
-
-    let mem_config = build_mem_config(config, &creator_ex);
-    match creator_ex {
-        BufferCreatorEx::List(list) => {
-            apply_number_type!(number_type, _create_buffer_from_list, [&session, list, mem_config])
-        },
-        BufferCreatorEx::Array(arr) => {
-            apply_number_type!(number_type, _create_buffer_from_array, [&session, arr, mem_config])
-        },
-        BufferCreatorEx::Length(len) => {
-            apply_number_type!(number_type, _create_buffer_from_len, [&session, len, mem_config])
-        },
+) -> nif::Result<BufferEx> {
+    let mem_config = build_mem_config(config, &length);
+    let tid = num_type_ex.number_type().number_type_id();
+    apply_type_id! {
+        type_id: tid,
+        func: _create_buffer_from_len,
+        args: [&session, length, mem_config],
+        default: Err(nif::error_string("Unmatched type_id during create_buffer from length"))
     }
 }
 
-fn build_mem_config(config: MemConfigEx, creator_ex: &BufferCreatorEx) -> MemConfig {
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn session_self_create_buffer_from_list<'a>(
+    session: SessionEx,
+    num_list_ex: NumListEx,
+    config: MemConfigEx,
+) -> nif::Result<BufferEx> {
+    let list: NumList = num_list_ex.into_num_list();
+    let mem_config = build_mem_config(config, &list);
+    apply_type_id! {
+        type_id: list.tid(),
+        func: _create_buffer_from_list,
+        args: [&session, list, mem_config],
+        default: Err(nif::error_string("Unmatched type_id during create_buffer_from_list"))
+    }
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn session_self_create_buffer_from_array<'a>(
+    session: SessionEx,
+    array: ArrayEx,
+    config: MemConfigEx,
+) -> nif::Result<BufferEx> {
+    let list = array.read_lock();
+    let tid = list.tid();
+    let mem_config = build_mem_config(config, &(*list));
+    std::mem::drop(list);
+    apply_type_id! {
+        type_id: tid,
+        func: _create_buffer_from_array,
+        args: [&session, array, mem_config],
+        default: Err(nif::error_string("Unmatched type_id during create_buffer from array"))
+    }
+}
+
+fn build_mem_config<T: BufferBuilder>(config: MemConfigEx, buffer_builder: &T) -> MemConfig {
     config
         .into_builder()
-        .with_mem_location_of_buffer_creator(&creator_ex)
+        .with_mem_allocation(buffer_builder)
         .build()
 }
 
 #[inline]
-fn _create_buffer_from_len<T: NumberEx>(
+fn _create_buffer_from_len<T: NumExT>(
     sess: &SessionEx,
     len: usize,
     mem_config: MemConfig,
-) -> OutputEx<BufferEx> {
+) -> nif::Result<BufferEx> {
     let core_buffer = sess
         .native()
-        .create_buffer_with_config::<T, usize>(len, mem_config)?;
+        .create_buffer_with_config::<T, usize>(len, mem_config)
+        .map_err(|e| e.error())?;
     Ok(BufferEx::from_core_buffer(core_buffer))
 }
 
-fn _buffer_from_slice<T: NumberEx>(
+fn _buffer_from_slice<T: NumExT>(
     sess: &SessionEx,
     data: &[T],
     mem_config: MemConfig,
-) -> OutputEx<BufferEx> {
+) -> nif::Result<BufferEx> {
     sess.native()
         .create_buffer_with_config::<T, &[T]>(data, mem_config)
         .map(|b| BufferEx::from_core_buffer(b))
-        .map_err(From::from)
+        .map_err(|e| e.error())
 }
 
-fn _create_buffer_from_list<T: NumberEx>(
+fn _create_buffer_from_list<T: NumExT>(
     sess: &SessionEx,
-    list: NumberListEx,
+    list: NumList,
     mem_config: MemConfig,
-) -> OutputEx<BufferEx> {
-    let rt_list = RuntimeNumberList::from(list);
-    _buffer_from_slice::<T>(sess, rt_list.force_as_slice(), mem_config)
+) -> nif::Result<BufferEx> {
+    _buffer_from_slice::<T>(sess, list.as_slice()?, mem_config)
 }
 
-fn _create_buffer_from_array<T: NumberEx>(
+fn _create_buffer_from_array<T: NumExT>(
     sess: &SessionEx,
     array: ArrayEx,
     mem_config: MemConfig,
-) -> OutputEx<BufferEx> {
-    let rt_list = array.read_lock();
-    _buffer_from_slice(sess, rt_list.force_as_slice::<T>(), mem_config)
-    
-    // match rt_list.number_type() {
-    //     NT::U8 => _buffer_from_slice(sess, rt_list.force_as_slice::<u8>(), mem_config),
-    //     NT::I8 => _buffer_from_slice(sess, rt_list.force_as_slice::<i8>(), mem_config),
-    //     NT::U16 => _buffer_from_slice(sess, rt_list.force_as_slice::<u16>(), mem_config),
-    //     NT::I16 => _buffer_from_slice(sess, rt_list.force_as_slice::<i16>(), mem_config),
-    //     NT::U32 => _buffer_from_slice(sess, rt_list.force_as_slice::<u32>(), mem_config),
-    //     NT::I32 => _buffer_from_slice(sess, rt_list.force_as_slice::<i32>(), mem_config),
-    //     NT::F32 => _buffer_from_slice(sess, rt_list.force_as_slice::<f32>(), mem_config),
-    //     NT::U64 => _buffer_from_slice(sess, rt_list.force_as_slice::<u64>(), mem_config),
-    //     NT::I64 => _buffer_from_slice(sess, rt_list.force_as_slice::<i64>(), mem_config),
-    //     NT::F64 => _buffer_from_slice(sess, rt_list.force_as_slice::<f64>(), mem_config),
-    //     NT::Usize => _buffer_from_slice(sess, rt_list.force_as_slice::<usize>(), mem_config),
-    //     NT::Isize => _buffer_from_slice(sess, rt_list.force_as_slice::<isize>(), mem_config),
-    // }
+) -> nif::Result<BufferEx> {
+    let list = array.read_lock();
+    _buffer_from_slice(sess, list.as_slice::<T>()?, mem_config)
 }
 
-fn _sync_write_buffer<T: NumberEx>(
+fn _sync_write_buffer<T: NumExT>(
     sess: &SessionEx,
     buffer: BufferEx,
     array: ArrayEx,
     cq_options: Option<CommandQueueOptionsEx>,
-) -> OutputEx<()> {
-    let rt_list = array.read_lock();
-    let data: &[T] = rt_list.force_as_slice();
-    let buffer_t: &Buffer<T> = buffer.wrapper().buffer().unwrap();
+) -> nif::Result<()> {
+    let list = array.read_lock();
+    let data: &[T] = list.as_slice().unwrap();
+    let buffer_t: &Buffer = buffer.wrapper().buffer();
     let cl_cq_opts: Option<CommandQueueOptions> = cq_options.map(|o| o.into());
     sess.native()
         .sync_write_buffer::<T, &[T]>(buffer_t, data, cl_cq_opts)
-        .map_err(From::from)
+        .map_err(|e| e.error())
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -224,31 +232,33 @@ pub fn session_self_write_array_to_buffer(
     buffer: BufferEx,
     array: ArrayEx,
     cq_options: Option<CommandQueueOptionsEx>,
-) -> OutputEx<()> {
+) -> nif::Result<()> {
     let num_type = buffer.number_type();
     if num_type != array.number_type() {
-        num_type.mismatch_error(array.number_type());
+        let e = NumberTypeError::Mismatch(num_type, array.number_type());
+        return Err(e.error());
     }
-    apply_number_type!(
-        num_type,
-        _sync_write_buffer,
-        [&session, buffer, array, cq_options]
+    apply_type_id!(
+        type_id: num_type.number_type_id(),
+        func: _sync_write_buffer,
+        args: [&session, buffer, array, cq_options],
+        default: Err(nif::error_string("Unmatched type_id during write_array_to_buffer"))
     )
 }
 
-pub fn _sync_read_buffer<T: NumberEx>(
+pub fn _sync_read_buffer<T: NumExT>(
     sess: &SessionEx,
-    buffer: BufferEx,
+    buf_ex: BufferEx,
     cq_opts_ex: Option<CommandQueueOptionsEx>,
-) -> OutputEx<ArrayEx> {
-    let buffer_t: &Buffer<T> = buffer.wrapper().buffer().unwrap();
-    let data = utils::vec_filled_with::<T>(T::zero(), buffer_t.len());
+) -> nif::Result<ArrayEx> {
+    let buffer: &Buffer = buf_ex.wrapper().buffer();
+    let data = vec![T::zero(); buffer.len()];
     let cq_opts_cl: Option<CommandQueueOptions> = cq_opts_ex.map(|o| o.into());
 
     sess.native()
-        .sync_read_buffer(buffer_t, data, cq_opts_cl)
-        .map_err(From::from)
-        .map(|num_vec| ArrayEx::from(RuntimeNumberList::from_vec(num_vec.unwrap())))
+        .sync_read_buffer(buffer, data, cq_opts_cl)
+        .map_err(|e| e.error())
+        .map(|num_vec| ArrayEx::from(NumList::from_vec(num_vec.unwrap())))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -256,40 +266,32 @@ pub fn session_self_read_buffer(
     session: SessionEx,
     buffer: BufferEx,
     cq_opts_ex: Option<CommandQueueOptionsEx>,
-) -> OutputEx<ArrayEx> {
+) -> nif::Result<ArrayEx> {
     let num_type = buffer.number_type();
-    apply_number_type!(num_type, _sync_read_buffer, [&session, buffer, cq_opts_ex])
-}
-
-pub fn _execute_sync_kernel_operation<T: NumberEx>(
-    session: &SessionEx,
-    kernel_op_ex: KernelOpEx,
-) -> OutputEx<()> {
-    let kernel_op_cl = kernel_op_ex.into_kernel_operation::<T>()?;
-    let _ = session
-        .native()
-        .execute_sync_kernel_operation::<T>(kernel_op_cl)?;
-    Ok(())
+    apply_type_id! {
+        type_id: num_type.number_type_id(),
+        func: _sync_read_buffer,
+        args: [&session, buffer, cq_opts_ex],
+        default: Err(nif::error_string("Unmatched type_id during read_buffer"))
+    }
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn session_self_execute_kernel_operation(
     session: SessionEx,
-    kernel_op_ex: KernelOpEx,
-) -> OutputEx<()> {
-    let num_type = kernel_op_ex.number_type();
-    apply_number_type!(
-        num_type,
-        _execute_sync_kernel_operation,
-        [&session, kernel_op_ex]
-    )
+    op_ex: KernelOpEx,
+) -> nif::Result<()> {
+    session
+        .native()
+        .execute_sync_kernel_operation(op_ex.into_kernel_operation())
+        .map_err(|e| e.error())
 }
 
 #[rustler::nif]
-pub fn session_self_create_copy(session: SessionEx) -> OutputEx<SessionEx> {
+pub fn session_self_create_copy(session: SessionEx) -> nif::Result<SessionEx> {
     session
         .native()
         .create_copy()
         .map(|s| SessionEx::new(s))
-        .map_err(From::from)
+        .map_err(|e| e.error())
 }

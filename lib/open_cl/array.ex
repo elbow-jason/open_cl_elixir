@@ -1,17 +1,36 @@
 defmodule OpenCL.Array do
   use OpenCL.NativeStruct
   alias OpenCL.Array
+  alias OpenCL.Native
+  alias OpenCL.Number
 
-  defdelegate new(number_type, numbers), to: Native, as: :array_new
+  @spec new(Native.number_typed_list()) :: {:ok, t()} | {:error, any}
+  def new(number_typed_list) do
+    case Native.array_new(number_typed_list) do
+      :invalid_variant ->
+        # if this is not an error we've got a bug
+        {:error, errors} = Number.check(number_typed_list)
+        {:error, errors}
+      %Array{} = array ->
+        {:ok, array}
+    end
+  end
 
-  defdelegate filled_with(number_type, number, count), to: Native, as: :array_new_filled_with
+  def filled_with(typed_number, count) do
+    array = Native.array_new_filled_with(typed_number, count)
+    {:ok, array}
+  end
 
   defdelegate to_list(array), to: Native, as: :array_data
 
   defdelegate length(array), to: Native, as: :array_length
 
-  defdelegate push(array, number), to: Native, as: :array_push
-
+  def push(array, number) do
+    case Native.array_push(array, number) do
+      {} -> array
+      err -> err
+    end
+  end
   def extend(array, %Array{} = other) do
     case Native.array_extend_from_array(array, other) do
       {:ok, {}} -> :ok
@@ -30,5 +49,21 @@ defmodule OpenCL.Array do
 
   defdelegate type(array), to: Native, as: :array_number_type
 
-  defdelegate type_cast(array, number_type), to: Native, as: :array_cast
+  def type_cast(array, number_type) do
+    case Native.array_cast(array, number_type) do
+      %Array{} = array2 ->
+        {:ok, array2}
+      :invalid_variant ->
+        {:error, {:invalid_number_type, number_type}}
+      {:error, _} = err ->
+        err
+    end
+  end
+
+  defimpl Inspect do
+    alias OpenCL.Array
+    def inspect(arr, _) do
+      "#OpenCL.Array<[type: #{Array.type(arr)}, len: #{Array.length(arr)}]>"
+    end
+  end
 end

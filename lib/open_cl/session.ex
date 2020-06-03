@@ -7,8 +7,9 @@ defmodule OpenCL.Session do
   alias OpenCL.CommandQueueOpts
   alias OpenCL.Session
   alias OpenCL.KernelOp
-  alias OpenCL.Work
   alias OpenCL.CommandQueueProps
+
+  use OpenCL.T
 
   @type create_option ::
           {:command_queue_properties, CommandQueueProps.t()}
@@ -21,23 +22,24 @@ defmodule OpenCL.Session do
     case Keyword.fetch(opts, :devices) do
       {:ok, devices} when is_list(devices) ->
         create_with_devices(src, devices, opts)
+
       :error ->
         src
         |> Native.session_create(get_props(opts))
-        |> handle_return(opts)
+        |> handle_create(opts)
     end
   end
 
-  @spec create_with_devices(String.t(), [Device.t], [create_option]) :: create_result()
+  @spec create_with_devices(String.t(), [Device.t()], [create_option]) :: create_result()
   def create_with_devices(src, devices, opts) do
-     devices
+    devices
     |> Native.session_create_with_devices(src, get_props(opts))
-    |> handle_return(opts)
+    |> handle_create(opts)
   end
 
-  defp handle_return({:ok, sessions}, _opts), do: {:ok, sessions}
-  defp handle_return(:invalid_variant, opts), do: create_session_errors(opts)
-  defp handle_return({:error, _} = err, _), do: err
+  defp handle_create(sessions, _opts) when is_list(sessions), do: {:ok, sessions}
+  defp handle_create(:invalid_variant, opts), do: create_session_errors(opts)
+  defp handle_create({:error, _} = err, _), do: err
 
   defp create_session_errors(opts) do
     CommandQueueProps.errors(get_props(opts))
@@ -50,17 +52,79 @@ defmodule OpenCL.Session do
   method(:device)
   method(:create_copy)
 
-  def create_buffer(%Session{} = session, type, len_or_data, opts \\ []) do
-    case Native.session_self_create_buffer(session, type, len_or_data, native_mem_config(opts)) do
-      {:ok, %Buffer{}} = okay_buffer -> okay_buffer
-      :invalid_variant -> {:error, create_buffer_errors(type, len_or_data, opts)}
-      {:error, _} = error -> error
+  # def create_buffer(%Session{} = session, %Array{} = array) do
+  #   create_buffer(session, array, [])
+  # end
+
+  # def create_buffer_with_length(%Session{} = session, type, len) when T.is_len(len) do
+  #   create_buffer(session, type, len, [])
+  # end
+
+  def create_buffer_from_data(session, array_or_num_list, opts \\ [])
+
+  def create_buffer_from_data(%Session{} = session, {t, nums}, opts) when T.is_number_type(t) and is_list(nums) do
+    session
+    |> Native.session_self_create_buffer_from_list({t, nums}, native_mem_config(opts))
+    |> case do
+      %Buffer{} = buffer ->
+        {:ok, buffer}
+      err ->
+        handle_create_buffer(err, {t, nums}, opts)
     end
+  end
+
+  def create_buffer_from_data(%Session{} = session, %Array{} = array, opts) when is_list(opts) do
+    session
+    |> Native.session_self_create_buffer_from_array(array, native_mem_config(opts))
+    |> case do
+      %Buffer{} = buffer ->
+        {:ok, buffer}
+      err ->
+        handle_create_buffer(err, array, opts)
+    end
+    # |> case do
+    #   :invalid_variant ->
+    #     handle_create_buffer(:invalid_variant, Array.type(array), array, opts)
+
+    #   ret ->
+    #     handle_create_buffer(ret, nil, array, opts)
+    # end
+  end
+
+  def create_buffer_with_length(%Session{} = session, type, len, opts \\ []) when T.is_len(len) and is_list(opts) do
+    session
+    |> Native.session_self_create_buffer_with_length(type, len, native_mem_config(opts))
+    |> case do
+      %Buffer{} = buffer ->
+        {:ok, buffer}
+      err ->
+        handle_create_buffer(err, {type, len}, opts)
+    end
+  end
+
+
+  defp handle_create_buffer({:error, _} = error, _, _), do: error
+  defp handle_create_buffer(:invalid_variant, builder, opts) do
+    {:error, create_buffer_errors(builder, opts)}
+  end
+  defp create_buffer_errors(%Array{} = data, opts) do
+    mem_config = MemConfig.build(opts)
+    type = Array.type(data)
+    len_or_data_errors(data) ++
+      number_type_errors(type) ++
+      MemConfig.errors(mem_config)
+  end
+  defp create_buffer_errors({type, data}, opts) do
+    mem_config = MemConfig.build(opts)
+
+    len_or_data_errors(data) ++
+      number_type_errors(type) ++
+      MemConfig.errors(mem_config)
   end
 
   def write_buffer(%Session{} = session, %Buffer{} = buffer, %Array{} = array, opts \\ []) do
     case Native.session_self_write_array_to_buffer(session, buffer, array, native_cq_opts(opts)) do
-      {:ok, {}} -> :ok
+      {} -> :ok
       :invalid_variant -> {:error, write_buffer_errors(opts)}
       {:error, _} = err -> err
     end
@@ -68,23 +132,31 @@ defmodule OpenCL.Session do
 
   def read_buffer(%Session{} = session, %Buffer{} = buffer, opts \\ []) do
     case Native.session_self_read_buffer(session, buffer, native_cq_opts(opts)) do
-      {:ok, %Array{} = arr} -> {:ok, arr}
+      %Array{} = arr -> {:ok, arr}
       :invalid_variant -> {:error, read_buffer_errors(opts)}
       {:error, _} = err -> err
     end
   end
 
-  @spec execute_kernel(Session.t(), KernelOp.name(), KernelOp.work_builder(), KernelOp.args(), KernelOp.options()) :: :ok | {:error, binary | [any]} | {:ok, any}
+  @spec execute_kernel(
+          Session.t(),
+          KernelOp.name(),
+          KernelOp.work_builder(),
+          KernelOp.args(),
+          KernelOp.options()
+        ) :: :ok | {:error, binary | [any]} | {:ok, any}
   def execute_kernel(%Session{} = session, name, work_builder, args, opts \\ []) do
-    work = Work.build(work_builder)
-
     kernel_op =
       name
-      |> KernelOp.build(work, args, opts)
+      |> KernelOp.build(work_builder, args, opts)
       |> KernelOp.to_native()
-    # output(non_neg_integer() | Buffer.t())
+
+    execute_kernel_op(session, kernel_op)
+  end
+
+  def execute_kernel_op(%Session{} = session, %KernelOp{} = kernel_op) do
     case Native.session_self_execute_kernel_operation(session, kernel_op) do
-      {:ok, {}} -> returning(kernel_op)
+      {} -> returning(kernel_op)
       :invalid_variant -> {:error, execute_kernel_errors(kernel_op)}
       {:error, _} = err -> err
     end
@@ -109,13 +181,6 @@ defmodule OpenCL.Session do
     |> MemConfig.to_native()
   end
 
-  defp create_buffer_errors(type, len_or_data, opts) do
-    mem_config = MemConfig.build(opts)
-
-    len_or_data_errors(len_or_data) ++
-      number_type_errors(type) ++
-      MemConfig.errors(mem_config)
-  end
 
   defp write_buffer_errors(opts) do
     command_queue_opts_error(opts)
@@ -140,20 +205,7 @@ defmodule OpenCL.Session do
   defp len_or_data_errors(%Array{}), do: []
   defp len_or_data_errors(_), do: [len_or_data: "invalid value"]
 
-  @number_types [
-    :u8,
-    :i8,
-    :u16,
-    :i16,
-    :u32,
-    :i32,
-    :f32,
-    :u64,
-    :i64,
-    :f64
-  ]
-
-  defp number_type_errors(t) when t in @number_types, do: []
+  defp number_type_errors(t) when T.is_number_type(t), do: []
   defp number_type_errors(_), do: [number_type: "is invalid"]
 
   defimpl Inspect do

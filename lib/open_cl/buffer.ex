@@ -1,16 +1,20 @@
 defmodule OpenCL.Buffer do
   use OpenCL.NativeStruct
-  # alias OpenCL.Array
-  # alias OpenCL.Session
-  # alias OpenCL.Buffer
-
-  # def create(%Session{} = session, number_type, len_or_data, opts \\ []) do
-  #   Session.create_buffer(session, number_type, len_or_data, opts)
-  # end
 
   method(:length)
   method(:number_type)
+  method(:mem_config)
+  method(:reference_count)
+  method(:available_devices)
 
-  # defdelegate to_array(buf), to: Native, as: :buffer_to_array
-  # defdelegate reference_count(buf), to: Native, as: :buffer_reference_count
+  defimpl Inspect do
+    alias OpenCL.Buffer
+    def inspect(buffer, _) do
+      nt = Buffer.number_type(buffer)
+      len = Buffer.length(buffer)
+      # mem_cfg = inspect(Buffer.mem_config(buffer))
+      # devices = inspect(Buffer.available_devices(buffer))
+      "#OpenCL.Buffer<[number_type: #{nt}, length: #{len}]>"
+    end
+  end
 end

@@ -22,6 +22,7 @@ defmodule OpenCL.CommandQueueProps do
     case opts -- @props do
       [] ->
         []
+
       got ->
         [command_queue_properties: "Allowed flags are #{inspect(@props)}. Got: #{inspect(got)}"]
     end
